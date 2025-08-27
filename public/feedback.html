@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Generator - Feedback & Notes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .selection-panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+        }
+
+        .selection-panel h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .selectable-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .selectable-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .selectable-item.selected {
+            border-color: #667eea;
+            background: linear-gradient(to right, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        }
+
+        .selectable-item.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #667eea;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .item-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .item-description {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .notes-panel {
+            background: #fff;
+            border-radius: 15px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .notes-panel h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .selected-items {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .selected-items h3 {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .selected-item-tag {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin: 5px 5px 5px 0;
+            font-size: 0.85rem;
+        }
+
+        .notes-textarea {
+            flex: 1;
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 200px;
+            transition: border-color 0.3s;
+        }
+
+        .notes-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .output-section {
+            background: #f0f8ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .output-section.show {
+            display: block;
+        }
+
+        .output-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .output-content {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            border: 1px solid #ddd;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .copy-btn {
+            margin-top: 10px;
+            padding: 8px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .copy-btn:hover {
+            background: #218838;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Invoice Generator Feedback</h1>
+            <p>Select elements and add notes to communicate your requirements</p>
+        </div>
+
+        <div class="content">
+            <div class="selection-panel">
+                <h2>Select Areas to Discuss</h2>
+                
+                <div class="selectable-item" data-item="dashboard">
+                    <div class="item-title">Dashboard View</div>
+                    <div class="item-description">Stats, pipeline, quick actions panel</div>
+                </div>
+
+                <div class="selectable-item" data-item="invoice-form">
+                    <div class="item-title">Invoice Form</div>
+                    <div class="item-description">Company details, client info, line items</div>
+                </div>
+
+                <div class="selectable-item" data-item="line-items">
+                    <div class="item-title">Line Items</div>
+                    <div class="item-description">Description, quantity, rate, date fields</div>
+                </div>
+
+                <div class="selectable-item" data-item="pdf-generation">
+                    <div class="item-title">PDF Generation</div>
+                    <div class="item-description">Download and preview functionality</div>
+                </div>
+
+                <div class="selectable-item" data-item="saved-invoices">
+                    <div class="item-title">Saved Invoices</div>
+                    <div class="item-description">Storage, retrieval, editing</div>
+                </div>
+
+                <div class="selectable-item" data-item="ui-design">
+                    <div class="item-title">UI/UX Design</div>
+                    <div class="item-description">Colors, layout, responsiveness</div>
+                </div>
+
+                <div class="selectable-item" data-item="navigation">
+                    <div class="item-title">Navigation</div>
+                    <div class="item-description">Moving between views, buttons</div>
+                </div>
+
+                <div class="selectable-item" data-item="data-persistence">
+                    <div class="item-title">Data Persistence</div>
+                    <div class="item-description">LocalStorage, data management</div>
+                </div>
+
+                <div class="selectable-item" data-item="new-feature">
+                    <div class="item-title">New Feature Request</div>
+                    <div class="item-description">Something not listed above</div>
+                </div>
+
+                <div class="selectable-item" data-item="bug-fix">
+                    <div class="item-title">Bug Fix</div>
+                    <div class="item-description">Report an issue or error</div>
+                </div>
+            </div>
+
+            <div class="notes-panel">
+                <h2>Your Notes</h2>
+                
+                <div class="selected-items">
+                    <h3>Selected Items:</h3>
+                    <div id="selected-items-container">
+                        <span style="color: #999;">No items selected yet</span>
+                    </div>
+                </div>
+
+                <textarea 
+                    class="notes-textarea" 
+                    id="notes-textarea"
+                    placeholder="Describe what you'd like to change, add, or improve about the selected areas..."
+                ></textarea>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="generateFeedback()">Generate Feedback</button>
+                    <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+                </div>
+
+                <div class="output-section" id="output-section">
+                    <h3>📝 Generated Feedback for Claude:</h3>
+                    <div class="output-content" id="output-content"></div>
+                    <button class="copy-btn" onclick="copyToClipboard()">Copy to Clipboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Copied to clipboard!</div>
+
+    <script>
+        // Track selected items
+        let selectedItems = [];
+
+        // Add click handlers to selectable items
+        document.querySelectorAll('.selectable-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const itemId = this.getAttribute('data-item');
+                const itemTitle = this.querySelector('.item-title').textContent;
+                
+                if (this.classList.contains('selected')) {
+                    // Remove from selection
+                    this.classList.remove('selected');
+                    selectedItems = selectedItems.filter(i => i.id !== itemId);
+                } else {
+                    // Add to selection
+                    this.classList.add('selected');
+                    selectedItems.push({ id: itemId, title: itemTitle });
+                }
+                
+                updateSelectedItemsDisplay();
+            });
+        });
+
+        // Update the display of selected items
+        function updateSelectedItemsDisplay() {
+            const container = document.getElementById('selected-items-container');
+            
+            if (selectedItems.length === 0) {
+                container.innerHTML = '<span style="color: #999;">No items selected yet</span>';
+            } else {
+                container.innerHTML = selectedItems
+                    .map(item => `<span class="selected-item-tag">${item.title}</span>`)
+                    .join('');
+            }
+        }
+
+        // Generate formatted feedback
+        function generateFeedback() {
+            const notes = document.getElementById('notes-textarea').value;
+            
+            if (selectedItems.length === 0 && !notes) {
+                alert('Please select at least one item or add some notes');
+                return;
+            }
+            
+            let feedback = '## Invoice Generator Feedback\n\n';
+            
+            if (selectedItems.length > 0) {
+                feedback += '### Areas to Address:\n';
+                selectedItems.forEach(item => {
+                    feedback += `- **${item.title}**\n`;
+                });
+                feedback += '\n';
+            }
+            
+            if (notes) {
+                feedback += '### Detailed Requirements:\n';
+                feedback += notes + '\n\n';
+            }
+            
+            feedback += '### Context:\n';
+            feedback += `- Date: ${new Date().toLocaleString()}\n`;
+            feedback += `- Selected Items: ${selectedItems.length}\n`;
+            feedback += `- Project: Invoice Generator\n`;
+            
+            // Display the output
+            document.getElementById('output-content').textContent = feedback;
+            document.getElementById('output-section').classList.add('show');
+            
+            // Scroll to output
+            document.getElementById('output-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Clear all selections and notes
+        function clearAll() {
+            selectedItems = [];
+            document.querySelectorAll('.selectable-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.getElementById('notes-textarea').value = '';
+            updateSelectedItemsDisplay();
+            document.getElementById('output-section').classList.remove('show');
+        }
+
+        // Copy feedback to clipboard
+        function copyToClipboard() {
+            const content = document.getElementById('output-content').textContent;
+            
+            navigator.clipboard.writeText(content).then(() => {
+                // Show toast notification
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }).catch(err => {
+                alert('Failed to copy to clipboard. Please select and copy manually.');
+            });
+        }
+
+        // Auto-save to localStorage
+        setInterval(() => {
+            const notes = document.getElementById('notes-textarea').value;
+            if (notes || selectedItems.length > 0) {
+                localStorage.setItem('invoice-feedback', JSON.stringify({
+                    selectedItems: selectedItems,
+                    notes: notes,
+                    timestamp: new Date().toISOString()
+                }));
+            }
+        }, 5000);
+
+        // Load saved data on page load
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('invoice-feedback');
+            if (saved) {
+                const data = JSON.parse(saved);
+                selectedItems = data.selectedItems || [];
+                document.getElementById('notes-textarea').value = data.notes || '';
+                
+                // Restore selected state
+                selectedItems.forEach(item => {
+                    const element = document.querySelector(`[data-item="${item.id}"]`);
+                    if (element) {
+                        element.classList.add('selected');
+                    }
+                });
+                
+                updateSelectedItemsDisplay();
+            }
+        });
+    </script>
+</body>
+</html>

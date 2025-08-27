@@ -1,0 +1,373 @@
+/* Mobile-Specific Fixes for Invoice Form */
+
+/* ========================================
+   INVOICE ITEMS TABLE - MOBILE LAYOUT
+   ======================================== */
+
+/* For screens smaller than 768px, completely redesign the invoice items */
+@media (max-width: 768px) {
+  /* Hide the desktop grid layout */
+  .invoice-items-desktop {
+    display: none !important;
+  }
+  
+  /* Main grid adjustments for invoice items section */
+  .grid.grid-cols-12 {
+    display: block !important;
+    width: 100%;
+  }
+  
+  /* Convert grid columns to full width on mobile */
+  .col-span-1,
+  .col-span-2,
+  .col-span-3,
+  .col-span-4,
+  .col-span-5,
+  .col-span-6,
+  .col-span-7,
+  .col-span-8,
+  .col-span-9,
+  .col-span-10,
+  .col-span-11,
+  .col-span-12 {
+    grid-column: span 12 / span 12 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Invoice item card layout for mobile */
+  .invoice-item-mobile {
+    background: rgba(75, 85, 99, 0.5);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+  }
+  
+  /* Description field - full width */
+  .invoice-item-mobile .description-field {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  
+  .invoice-item-mobile .description-field input,
+  .invoice-item-mobile .description-field textarea {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px; /* Prevent zoom on iOS */
+    border-radius: 8px;
+    background: rgba(55, 65, 81, 1);
+    border: 1px solid rgba(75, 85, 99, 1);
+    color: white;
+  }
+  
+  /* Date, Quantity, and Rate in a row */
+  .invoice-item-mobile .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .invoice-item-mobile .input-group {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .invoice-item-mobile .input-label {
+    font-size: 12px;
+    color: rgba(156, 163, 175, 1);
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  
+  .invoice-item-mobile .input-field {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px; /* Prevent zoom */
+    border-radius: 8px;
+    background: rgba(55, 65, 81, 1);
+    border: 1px solid rgba(75, 85, 99, 1);
+    color: white;
+    text-align: center;
+  }
+  
+  /* Amount display - prominent and contained */
+  .invoice-item-mobile .amount-display {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.1));
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  
+  .invoice-item-mobile .amount-label {
+    font-size: 12px;
+    color: rgba(156, 163, 175, 1);
+    margin-bottom: 4px;
+  }
+  
+  .invoice-item-mobile .amount-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #10b981;
+    word-break: break-all;
+    overflow-wrap: break-word;
+  }
+  
+  /* Actions row */
+  .invoice-item-mobile .actions-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .invoice-item-mobile .remove-button {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  /* Add item button - full width on mobile */
+  .add-item-button-mobile {
+    width: 100%;
+    padding: 16px;
+    margin-top: 16px;
+    background: linear-gradient(135deg, #a855f7, #ec4899);
+    color: white;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+}
+
+/* ========================================
+   INVOICE PREVIEW - MOBILE
+   ======================================== */
+
+@media (max-width: 640px) {
+  /* Invoice preview adjustments */
+  #invoice-preview {
+    padding: 16px;
+    font-size: 12px;
+  }
+  
+  #invoice-preview .grid.grid-cols-12 {
+    display: block;
+  }
+  
+  #invoice-preview .col-span-2,
+  #invoice-preview .col-span-4 {
+    display: inline-block;
+    width: auto;
+    margin-right: 8px;
+  }
+  
+  /* Stack the invoice header sections */
+  #invoice-preview .invoice-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  /* Invoice items table in preview */
+  #invoice-preview table {
+    font-size: 11px;
+  }
+  
+  #invoice-preview th,
+  #invoice-preview td {
+    padding: 4px;
+  }
+  
+  /* Hide less important columns on very small screens */
+  @media (max-width: 375px) {
+    #invoice-preview .hide-mobile {
+      display: none;
+    }
+  }
+}
+
+/* ========================================
+   FORM INPUTS - PROPER SIZING
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* Company and client information sections */
+  .company-section input,
+  .client-section input,
+  .company-section textarea,
+  .client-section textarea {
+    width: 100%;
+    min-height: 44px;
+    padding: 12px;
+    font-size: 16px;
+  }
+  
+  /* Invoice details section */
+  .invoice-details input,
+  .invoice-details select {
+    width: 100%;
+    min-height: 44px;
+    padding: 12px;
+    font-size: 16px;
+  }
+  
+  /* Tax and discount inputs */
+  .tax-discount-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .tax-discount-section input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+  }
+}
+
+/* ========================================
+   TOTALS SECTION - MOBILE
+   ======================================== */
+
+@media (max-width: 640px) {
+  /* Totals display */
+  .invoice-totals {
+    background: rgba(31, 41, 55, 1);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 20px;
+  }
+  
+  .invoice-totals .total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+  }
+  
+  .invoice-totals .total-row:last-child {
+    border-bottom: none;
+    padding-top: 12px;
+    margin-top: 8px;
+    border-top: 2px solid rgba(168, 85, 247, 0.5);
+  }
+  
+  .invoice-totals .total-label {
+    font-size: 14px;
+    color: rgba(156, 163, 175, 1);
+  }
+  
+  .invoice-totals .total-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+  }
+  
+  .invoice-totals .grand-total {
+    font-size: 20px;
+    color: #10b981;
+    font-weight: bold;
+  }
+}
+
+/* ========================================
+   ACTION BUTTONS - MOBILE
+   ======================================== */
+
+@media (max-width: 640px) {
+  /* Bottom action bar */
+  .invoice-actions {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(17, 24, 39, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 12px;
+    border-top: 1px solid rgba(75, 85, 99, 0.5);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    z-index: 100;
+  }
+  
+  .invoice-actions button {
+    padding: 12px;
+    font-size: 14px;
+    border-radius: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  
+  /* Primary action takes full width */
+  .invoice-actions .primary-action {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ========================================
+   OVERFLOW FIXES
+   ======================================== */
+
+/* Prevent any element from overflowing its container */
+* {
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Specific fixes for amount values */
+.amount-field,
+.total-amount,
+.invoice-amount {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* For very long numbers, allow wrapping */
+@media (max-width: 480px) {
+  .amount-field,
+  .total-amount,
+  .invoice-amount {
+    white-space: normal;
+    word-break: break-all;
+  }
+}
+
+/* ========================================
+   LANDSCAPE MODE - INVOICE ITEMS
+   ======================================== */
+
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Use horizontal layout in landscape */
+  .invoice-item-mobile .input-row {
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+  }
+  
+  .invoice-item-mobile {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  
+  /* Reduce vertical spacing */
+  .invoice-item-mobile .description-field {
+    margin-bottom: 8px;
+  }
+}
