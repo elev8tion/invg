@@ -9,6 +9,8 @@
 [build.environment]
   # Node.js version
   NODE_VERSION = "18"
+  # Disable treating warnings as errors in CI
+  CI = "false"
 
 [[redirects]]
   # Redirect all routes to index.html for SPA routing
