@@ -40,15 +40,32 @@ Your app is now ready for deployment as a Progressive Web App (PWA)!
    - Select your repository
    - Netlify will auto-detect settings from `netlify.toml`
 
-3. **Set Environment Variables:**
-   In Netlify dashboard → Site Settings → Environment Variables, add:
+3. **Set Environment Variables (REQUIRED):**
+   In Netlify dashboard → Site configuration → Environment variables, add:
    ```
-   REACT_APP_SUPABASE_URL=your_supabase_url
-   REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
-   REACT_APP_EMAILIT_API_KEY=your_emailit_api_key
+   NCB_INSTANCE    = 36905_invg
+   NCB_SECRET_KEY  = <the sk_live_... key from your local .env>
    ```
 
+   **These must NOT have a `REACT_APP_` prefix.** Create React App inlines any
+   `REACT_APP_*` variable into the public JavaScript bundle, and the secret key
+   is full read/write/delete on every table. It is read only by the serverless
+   function in `netlify/functions/ncb.js`, never by the browser.
+
+   Optional, client-side (safe to inline):
+   ```
+   REACT_APP_EMAILIT_API_KEY = your_emailit_api_key
+   ```
+
+   Without `NCB_INSTANCE` and `NCB_SECRET_KEY` the site builds and loads, but
+   every data request returns HTTP 503 and no businesses, customers or invoices
+   appear.
+
 4. **Deploy:** Click "Deploy site"
+
+   Environment variables are read when the function runs, but a deploy after
+   setting them is the reliable way to pick them up. If the site is already
+   deployed, use **Deploys → Trigger deploy → Clear cache and deploy site**.
 
 ## 📱 Mobile Web App Features
 
