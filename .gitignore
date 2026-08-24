@@ -8,3 +8,6 @@
 
 # Webpack/eslint cache
 node_modules/.cache/
+
+# Local Netlify folder
+.netlify
