@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Building } from 'lucide-react';
-import { businessService, userService } from './lib/supabase';
+import { businessService, userService } from './lib/db';
+import PaymentTermsField, { isCustomValue, validateTerms } from './components/PaymentTermsField';
 
 const BusinessModal = ({ business, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -26,6 +27,7 @@ const BusinessModal = ({ business, onSave, onClose }) => {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
 
+
   useEffect(() => {
     if (business) {
       setFormData({
@@ -50,6 +52,13 @@ const BusinessModal = ({ business, onSave, onClose }) => {
     }
   };
 
+  const handleTermsChange = (terms) => {
+    setFormData((prev) => ({ ...prev, default_payment_terms: terms }));
+    if (errors.default_payment_terms) {
+      setErrors((prev) => ({ ...prev, default_payment_terms: '' }));
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.name.trim()) {
@@ -62,6 +71,13 @@ const BusinessModal = ({ business, onSave, onClose }) => {
     }
     if (!formData.invoice_prefix.trim()) {
       newErrors.invoice_prefix = 'Invoice prefix is required';
+    }
+    const termsError = validateTerms(
+      formData.default_payment_terms,
+      isCustomValue(formData.default_payment_terms)
+    );
+    if (termsError) {
+      newErrors.default_payment_terms = termsError;
     }
     
     setErrors(newErrors);
@@ -77,7 +93,7 @@ const BusinessModal = ({ business, onSave, onClose }) => {
 
     setSaving(true);
     try {
-      // Save to Supabase
+      // Save to the database
       if (business?.id) {
         // Update existing business
         const updated = await businessService.updateBusiness(business.id, formData);
@@ -314,19 +330,12 @@ const BusinessModal = ({ business, onSave, onClose }) => {
             <h3 className="text-lg font-semibold text-purple-300 mb-4">Financial Settings</h3>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Default Payment Terms</label>
-                <select
-                  name="default_payment_terms"
+                <PaymentTermsField
+                  label="Default Payment Terms"
                   value={formData.default_payment_terms}
-                  onChange={handleChange}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white"
-                >
-                  <option value="Due on Receipt">Due on Receipt</option>
-                  <option value="Net 15">Net 15</option>
-                  <option value="Net 30">Net 30</option>
-                  <option value="Net 45">Net 45</option>
-                  <option value="Net 60">Net 60</option>
-                </select>
+                  onChange={handleTermsChange}
+                  error={errors.default_payment_terms}
+                />
               </div>
               
               <div>

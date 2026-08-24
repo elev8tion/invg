@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Users, Plus, Search, Edit3, Trash2, Save, X, 
   Mail, Phone, MapPin, Building, ChevronDown, Check
 } from 'lucide-react';
+import useCustomers from './hooks/useCustomers';
 
-const CustomerManagement = ({ onCustomerSelect, onClose }) => {
-  const [customers, setCustomers] = useState([]);
+const CustomerManagement = ({ onCustomerSelect, onClose, businessId }) => {
+  const { customers, loading, error, addCustomer, updateCustomer, deleteCustomer } =
+    useCustomers(businessId);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,34 +23,24 @@ const CustomerManagement = ({ onCustomerSelect, onClose }) => {
     notes: ''
   });
 
-  // Load customers from localStorage on mount
-  useEffect(() => {
-    const savedCustomers = localStorage.getItem('customers');
-    if (savedCustomers) {
-      setCustomers(JSON.parse(savedCustomers));
-    }
-  }, []);
-
-  // Save customers to localStorage whenever they change
-  useEffect(() => {
-    if (customers.length > 0) {
-      localStorage.setItem('customers', JSON.stringify(customers));
-    }
-  }, [customers]);
-
-  const handleAddCustomer = () => {
+  const handleAddCustomer = async () => {
     if (!newCustomer.name.trim()) {
       alert('Please enter a customer name');
       return;
     }
+    if (!businessId) {
+      alert('Select a business before adding customers');
+      return;
+    }
 
-    const customer = {
-      ...newCustomer,
-      id: Date.now(),
-      createdAt: new Date().toISOString()
-    };
+    try {
+      await addCustomer(newCustomer);
+    } catch (err) {
+      console.error('Failed to add customer:', err);
+      alert('Could not save the customer. Please try again.');
+      return;
+    }
 
-    setCustomers([...customers, customer]);
     setNewCustomer({
       name: '',
       company: '',
@@ -63,16 +55,24 @@ const CustomerManagement = ({ onCustomerSelect, onClose }) => {
     setShowAddForm(false);
   };
 
-  const handleUpdateCustomer = () => {
-    setCustomers(customers.map(c => 
-      c.id === editingCustomer.id ? editingCustomer : c
-    ));
+  const handleUpdateCustomer = async () => {
+    try {
+      await updateCustomer(editingCustomer.id, editingCustomer);
+    } catch (err) {
+      console.error('Failed to update customer:', err);
+      alert('Could not update the customer. Please try again.');
+      return;
+    }
     setEditingCustomer(null);
   };
 
-  const handleDeleteCustomer = (id) => {
-    if (window.confirm('Are you sure you want to delete this customer?')) {
-      setCustomers(customers.filter(c => c.id !== id));
+  const handleDeleteCustomer = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this customer?')) return;
+    try {
+      await deleteCustomer(id);
+    } catch (err) {
+      console.error('Failed to delete customer:', err);
+      alert('Could not delete the customer. Please try again.');
     }
   };
 
@@ -567,9 +567,17 @@ const CustomerManagement = ({ onCustomerSelect, onClose }) => {
                   color: '#9ca3af'
                 }}>
                   <Users size={48} style={{ marginBottom: '10px', opacity: 0.5 }} />
-                  <p style={{ fontSize: '18px', marginBottom: '5px' }}>No customers found</p>
+                  <p style={{ fontSize: '18px', marginBottom: '5px' }}>
+                    {loading ? 'Loading customers...' : error ? 'Could not load customers' : 'No customers found'}
+                  </p>
                   <p style={{ fontSize: '14px' }}>
-                    {searchTerm ? 'Try a different search term' : 'Click "Add Customer" to get started'}
+                    {loading
+                      ? 'Fetching from the database.'
+                      : error
+                      ? 'Check the connection and try again.'
+                      : searchTerm
+                      ? 'Try a different search term'
+                      : 'Click "Add Customer" to get started'}
                   </p>
                 </div>
               ) : (

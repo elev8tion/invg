@@ -4,7 +4,6 @@
   "description": "Professional invoice generator with modern design",
   "private": true,
   "dependencies": {
-    "@supabase/supabase-js": "^2.56.0",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^13.5.0",
@@ -30,7 +29,10 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "serve": "node server.js"
+    "serve": "node server.js",
+    "api": "PORT=3001 node server.js",
+    "db:verify": "node scripts/verify-schema.mjs",
+    "db:seed": "node scripts/seed.mjs"
   },
   "eslintConfig": {
     "extends": [
@@ -49,5 +51,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "proxy": "http://localhost:3001"
 }

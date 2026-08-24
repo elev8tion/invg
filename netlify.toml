@@ -12,6 +12,19 @@
   # Disable treating warnings as errors in CI
   CI = "false"
 
+[functions]
+  # Serverless functions directory (holds the NoCodeBackend proxy)
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# NoCodeBackend proxy. MUST come before the SPA catch-all below --
+# Netlify applies the first matching redirect.
+[[redirects]]
+  from = "/api/ncb/*"
+  to = "/.netlify/functions/ncb/:splat"
+  status = 200
+  force = true
+
 [[redirects]]
   # Redirect all routes to index.html for SPA routing
   from = "/*"
@@ -50,7 +63,9 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Environment variables placeholder (you'll need to set these in Netlify UI)
-# REACT_APP_SUPABASE_URL = "your-supabase-url"
-# REACT_APP_SUPABASE_ANON_KEY = "your-supabase-anon-key"
-# REACT_APP_EMAILIT_API_KEY = "your-emailit-api-key"
+# Environment variables -- set these in Netlify UI (Site settings -> Environment variables).
+# NOT prefixed with REACT_APP_, so CRA cannot inline them into the client bundle:
+#   NCB_INSTANCE   = "your_nocodebackend_instance"
+#   NCB_API_KEY    = "your_nocodebackend_instance_api_key"
+# Client-side only (safe to inline):
+#   REACT_APP_EMAILIT_API_KEY = "your-emailit-api-key"

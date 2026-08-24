@@ -25,14 +25,13 @@ import PaymentHistory from './PaymentHistory';
 import PurchaseOrders from './PurchaseOrders';
 import ResponsiveWrapper, { ResponsiveGrid, ResponsiveCard, ResponsiveButton, ResponsiveHeading } from './components/ResponsiveWrapper';
 
-const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onCreateInvoiceForCustomer, currentBusiness }) => {
+const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onCreateInvoiceForCustomer, currentBusiness, customers = [] }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [invoices, setInvoices] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [customers, setCustomers] = useState([]);
   const [stats, setStats] = useState({
     totalRevenue: 0,
     outstandingPayments: 0,
@@ -41,14 +40,6 @@ const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onCreateInvoiceFo
     revenueChange: 0,
     outstandingChange: 0
   });
-
-  useEffect(() => {
-    // Load saved customers
-    const savedCustomers = localStorage.getItem('customers');
-    if (savedCustomers) {
-      setCustomers(JSON.parse(savedCustomers));
-    }
-  }, []);
 
   useEffect(() => {
     // Initialize invoices with status

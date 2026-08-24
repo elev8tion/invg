@@ -460,9 +460,9 @@ ${business.name}
     };
   }
 
-  // Log email to database (will integrate with Supabase)
+  // Log email to database (will integrate with the email_log table)
   async logEmail(emailData) {
-    // TODO: Save to Supabase email_log table
+    // TODO: Save to the email_log table via invoiceService.sendInvoice()
     console.log('📧 Email log:', {
       to: emailData.to[0].email,
       subject: emailData.subject,

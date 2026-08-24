@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Calendar, TrendingUp, FileText, Plus, Search, Filter } from 'lucide-react';
-import { purchaseOrderService, invoiceService } from './lib/supabase';
+import { purchaseOrderService, invoiceService } from './lib/db';
 
 const PurchaseOrders = ({ businessId }) => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -24,7 +24,7 @@ const PurchaseOrders = ({ businessId }) => {
   const loadPurchaseOrders = async () => {
     setLoading(true);
     try {
-      // Get purchase orders from Supabase
+      // Get purchase orders from the database
       const pos = await purchaseOrderService.getPurchaseOrders(businessId);
       
       // Calculate invoiced amounts for each PO
