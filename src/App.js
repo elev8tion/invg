@@ -14,16 +14,20 @@ import FeedbackCommandCenter from './FeedbackCommandCenter';
 import CustomerPage from './CustomerPage';
 import BusinessSwitcher from './BusinessSwitcher';
 import BusinessModal from './BusinessModal';
-import { customerService, paymentService } from './lib/supabase';
+import PaymentTermsField from './components/PaymentTermsField';
+import { paymentService } from './lib/db';
+import useCustomers from './hooks/useCustomers';
 import DevTools from './components/DevTools';
 import './utils/cacheBuster'; // Import for side effects (keyboard shortcuts)
 
-const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSavedInvoices, editingInvoice, setEditingInvoice, customers, currentBusiness }) => {
+const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSavedInvoices, editingInvoice, setEditingInvoice, customers, currentBusiness, onCustomersChanged }) => {
   const [isListening, setIsListening] = useState(false);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [showCustomerManagement, setShowCustomerManagement] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
-  const [localCustomers, setLocalCustomers] = useState(customers || []);
+  // Customers come from the database via App's useCustomers hook. Previously
+  // this kept its own localStorage copy that never re-synced with the prop.
+  const localCustomers = customers || [];
   const [invoiceData, setInvoiceData] = useState({
     company: {
       name: 'Your Company Name',
@@ -58,20 +62,30 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
   const fileInputRef = useRef(null);
   const logoInputRef = useRef(null);
 
+  // True once the user picks terms by hand, so the business default stops
+  // overwriting their choice.
+  const [termsTouched, setTermsTouched] = useState(false);
+
   useEffect(() => {
     if (editingInvoice) {
       setInvoiceData(editingInvoice);
+      setTermsTouched(true);
       setEditingInvoice(null);
     }
   }, [editingInvoice, setEditingInvoice]);
 
+  // A fresh invoice follows the business default. The business usually loads
+  // after this component mounts, so seed the field once it arrives -- unless
+  // the user has already chosen terms themselves.
   useEffect(() => {
-    // Load customers
-    const savedCustomers = localStorage.getItem('customers');
-    if (savedCustomers) {
-      setLocalCustomers(JSON.parse(savedCustomers));
-    }
-  }, [showCustomerManagement]);
+    const businessDefault = currentBusiness?.default_payment_terms;
+    if (!businessDefault || termsTouched) return;
+    setInvoiceData((prev) =>
+      prev.invoice.terms === businessDefault
+        ? prev
+        : { ...prev, invoice: { ...prev.invoice, terms: businessDefault } }
+    );
+  }, [currentBusiness, termsTouched]);
 
   useEffect(() => {
     if (pendingDownload && currentView === 'create') {
@@ -270,7 +284,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
       const invoice = savedInvoices.find(inv => inv.id === invoiceId);
       if (!invoice) return;
       
-      // Create a payment record in Supabase for the full invoice amount
+      // Create a payment record in the database for the full invoice amount
       const payment = {
         invoice_id: invoiceId,
         amount: invoice.invoice?.total || calculateTotal(),
@@ -280,11 +294,13 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
         notes: 'Manually marked as paid'
       };
       
-      // If we have a valid Supabase invoice ID, record the payment there
-      if (invoice.supabaseId) {
+      // If we have a valid database invoice ID, record the payment there
+      // NOTE: nothing currently assigns `dbId` -- App.js keeps invoices in local
+      // state only, so this branch never runs. Pre-existing, carried over as-is.
+      if (invoice.dbId) {
         await paymentService.recordPayment({
           ...payment,
-          invoice_id: invoice.supabaseId
+          invoice_id: invoice.dbId
         });
       }
       
@@ -304,7 +320,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
       
-      // Still update local state even if Supabase fails
+      // Still update local state even if the database write fails
       const updatedInvoices = savedInvoices.map(inv => {
         if (inv.id === invoiceId) {
           return { 
@@ -711,15 +727,19 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
                   }))}
                   className="p-3 bg-gray-700 border border-gray-600 rounded-xl focus:border-purple-500 focus:outline-none"
                 />
-                <input
-                  type="text"
-                  placeholder="Payment Terms"
+                <PaymentTermsField
+                  label=""
                   value={invoiceData.invoice.terms}
-                  onChange={(e) => setInvoiceData(prev => ({
-                    ...prev,
-                    invoice: { ...prev.invoice, terms: e.target.value }
-                  }))}
-                  className="p-3 bg-gray-700 border border-gray-600 rounded-xl focus:border-purple-500 focus:outline-none"
+                  defaultTerms={currentBusiness?.default_payment_terms || ''}
+                  onChange={(terms) => {
+                    setTermsTouched(true);
+                    setInvoiceData(prev => ({
+                      ...prev,
+                      invoice: { ...prev.invoice, terms }
+                    }));
+                  }}
+                  selectClassName="w-full p-3 bg-gray-700 border border-gray-600 rounded-xl focus:border-purple-500 focus:outline-none text-white"
+                  compact
                 />
               </div>
             </div>
@@ -1024,6 +1044,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
       {/* Customer Management Modal */}
       {showCustomerManagement && (
         <CustomerManagement
+          businessId={currentBusiness?.id}
           onCustomerSelect={(customer) => {
             setInvoiceData(prev => ({
               ...prev,
@@ -1037,11 +1058,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
           }}
           onClose={() => {
             setShowCustomerManagement(false);
-            // Refresh customers list
-            const savedCustomers = localStorage.getItem('customers');
-            if (savedCustomers) {
-              setLocalCustomers(JSON.parse(savedCustomers));
-            }
+            onCustomersChanged?.();
           }}
         />
       )}
@@ -1070,7 +1087,8 @@ function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [savedInvoices, setSavedInvoices] = useState([]);
   const [editingInvoice, setEditingInvoice] = useState(null);
-  const [customers, setCustomers] = useState([]);
+  const [currentBusinessId, setCurrentBusinessId] = useState(null);
+  const { customers, reload: reloadCustomers } = useCustomers(currentBusinessId);
   const [currentBusiness, setCurrentBusiness] = useState(null);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState(null);
@@ -1082,11 +1100,6 @@ function App() {
       setSavedInvoices(JSON.parse(saved));
     }
     
-    // Load saved customers
-    const savedCustomers = localStorage.getItem('customers');
-    if (savedCustomers) {
-      setCustomers(JSON.parse(savedCustomers));
-    }
   }, []);
 
   const handleNavigate = (view) => {
@@ -1153,23 +1166,20 @@ function App() {
     setCurrentView('create');
   };
 
-  const handleBusinessChange = async (business) => {
+  const handleBusinessChange = (business) => {
     setCurrentBusiness(business);
-    
-    // Load customers for this business
-    if (business?.id) {
-      try {
-        const businessCustomers = await customerService.getCustomers(business.id);
-        setCustomers(businessCustomers || []);
-      } catch (error) {
-        console.error('Error loading customers:', error);
-        setCustomers([]);
-      }
-    }
+    // useCustomers reloads whenever the id changes, so switching business
+    // (or loading the first one) refreshes the list on its own.
+    setCurrentBusinessId(business?.id ?? null);
   };
 
   const handleCreateBusiness = () => {
     setEditingBusiness(null);
+    setShowBusinessModal(true);
+  };
+
+  const handleEditBusiness = () => {
+    setEditingBusiness(currentBusiness);
     setShowBusinessModal(true);
   };
 
@@ -1207,6 +1217,7 @@ function App() {
                 currentBusiness={currentBusiness}
                 onBusinessChange={handleBusinessChange}
                 onCreateBusiness={handleCreateBusiness}
+                onEditBusiness={handleEditBusiness}
               />
               <div className="text-sm text-gray-400">
                 {currentBusiness && (
@@ -1219,6 +1230,7 @@ function App() {
             </div>
           </div>
           <Dashboard 
+            customers={customers}
             onNavigate={handleNavigate}
             savedInvoices={savedInvoices}
             onEditInvoice={handleEditInvoice}
@@ -1246,6 +1258,7 @@ function App() {
     return (
       <>
         <CustomerPage
+          businessId={currentBusiness?.id}
           onNavigate={handleNavigate}
           onCreateInvoiceForCustomer={handleCreateInvoiceForCustomer}
         />
@@ -1262,6 +1275,7 @@ function App() {
         savedInvoices={savedInvoices}
         setSavedInvoices={setSavedInvoices}
         editingInvoice={editingInvoice}
+        onCustomersChanged={reloadCustomers}
         setEditingInvoice={setEditingInvoice}
         customers={customers}
         currentBusiness={currentBusiness}

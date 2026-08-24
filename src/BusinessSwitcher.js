@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Building, ChevronDown, Plus, Check, Settings, AlertCircle } from 'lucide-react';
-import { businessService } from './lib/supabase';
+import { businessService } from './lib/db';
 
-const BusinessSwitcher = ({ currentBusiness, onBusinessChange, onCreateBusiness }) => {
+const BusinessSwitcher = ({ currentBusiness, onBusinessChange, onCreateBusiness, onEditBusiness }) => {
   const [businesses, setBusinesses] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -186,8 +186,7 @@ const BusinessSwitcher = ({ currentBusiness, onBusinessChange, onCreateBusiness 
               <button
                 onClick={() => {
                   setShowDropdown(false);
-                  // Navigate to business settings
-                  console.log('Navigate to business settings');
+                  onEditBusiness?.();
                 }}
                 className="w-full px-4 py-3 text-left hover:bg-gray-700 flex items-center gap-3 transition-colors border-t border-gray-700"
               >

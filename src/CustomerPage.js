@@ -5,9 +5,11 @@ import {
   Calendar, DollarSign, FileText, TrendingUp,
   User, MoreVertical, Check
 } from 'lucide-react';
+import useCustomers from './hooks/useCustomers';
 
-const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer }) => {
-  const [customers, setCustomers] = useState([]);
+const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer, businessId }) => {
+  const { customers, loading, error, addCustomer, updateCustomer, deleteCustomer } =
+    useCustomers(businessId);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,21 +34,6 @@ const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer }) => {
     averageInvoiceValue: 0
   });
 
-  // Load customers from localStorage on mount
-  useEffect(() => {
-    const savedCustomers = localStorage.getItem('customers');
-    if (savedCustomers) {
-      const customersData = JSON.parse(savedCustomers);
-      setCustomers(customersData);
-      calculateStats(customersData);
-    }
-  }, []);
-
-  // Save customers to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('customers', JSON.stringify(customers));
-    calculateStats(customers);
-  }, [customers]);
 
   const calculateStats = (customerList) => {
     // Get saved invoices to calculate revenue per customer
@@ -84,19 +71,31 @@ const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer }) => {
     });
   };
 
-  const handleAddCustomer = () => {
+  // Recompute whenever the customer list changes.
+  useEffect(() => {
+    calculateStats(customers);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customers]);
+
+  const handleAddCustomer = async () => {
     if (!newCustomer.name.trim()) {
       alert('Please enter a customer name');
       return;
     }
+    if (!businessId) {
+      alert('Select a business before adding customers');
+      return;
+    }
 
-    const customer = {
-      ...newCustomer,
-      id: Date.now(),
-      createdAt: new Date().toISOString()
-    };
+    let customer;
+    try {
+      customer = await addCustomer(newCustomer);
+    } catch (err) {
+      console.error('Failed to add customer:', err);
+      alert('Could not save the customer. Please try again.');
+      return;
+    }
 
-    setCustomers([...customers, customer]);
     setNewCustomer({
       name: '',
       company: '',
@@ -112,20 +111,29 @@ const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer }) => {
     setSelectedCustomer(customer);
   };
 
-  const handleUpdateCustomer = () => {
-    setCustomers(customers.map(c => 
-      c.id === editingCustomer.id ? editingCustomer : c
-    ));
+  const handleUpdateCustomer = async () => {
+    try {
+      await updateCustomer(editingCustomer.id, editingCustomer);
+    } catch (err) {
+      console.error('Failed to update customer:', err);
+      alert('Could not update the customer. Please try again.');
+      return;
+    }
     setEditingCustomer(null);
     setSelectedCustomer(editingCustomer);
   };
 
-  const handleDeleteCustomer = (id) => {
-    if (window.confirm('Are you sure you want to delete this customer?')) {
-      setCustomers(customers.filter(c => c.id !== id));
-      if (selectedCustomer?.id === id) {
-        setSelectedCustomer(null);
-      }
+  const handleDeleteCustomer = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this customer?')) return;
+    try {
+      await deleteCustomer(id);
+    } catch (err) {
+      console.error('Failed to delete customer:', err);
+      alert('Could not delete the customer. Please try again.');
+      return;
+    }
+    if (selectedCustomer?.id === id) {
+      setSelectedCustomer(null);
     }
   };
 
@@ -252,9 +260,17 @@ const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer }) => {
               {filteredCustomers.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <Users size={48} className="mx-auto mb-4 opacity-50" />
-                  <p className="text-lg mb-2">No customers found</p>
+                  <p className="text-lg mb-2">
+                    {loading ? 'Loading customers...' : error ? 'Could not load customers' : 'No customers found'}
+                  </p>
                   <p className="text-sm">
-                    {searchTerm ? 'Try a different search' : 'Click "Add Customer" to get started'}
+                    {loading
+                      ? 'Fetching from the database.'
+                      : error
+                      ? 'Check the connection and try again.'
+                      : searchTerm
+                      ? 'Try a different search'
+                      : 'Click "Add Customer" to get started'}
                   </p>
                 </div>
               ) : (

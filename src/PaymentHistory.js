@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Calendar, Check, Clock, AlertCircle, Download, Search } from 'lucide-react';
-import { invoiceService, paymentService } from './lib/supabase';
+import { invoiceService, paymentService } from './lib/db';
 
 const PaymentHistory = ({ businessId }) => {
   const [payments, setPayments] = useState([]);
@@ -120,7 +120,7 @@ const PaymentHistory = ({ businessId }) => {
     return matchesFilter && matchesSearch;
   });
 
-  // Stats are now loaded from Supabase in loadPayments()
+  // Stats are now loaded from the database in loadPayments()
   const totalReceived = stats.totalReceived;
   const totalPending = stats.totalPending;
   const totalOverdue = stats.totalOverdue;

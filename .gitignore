@@ -2,3 +2,9 @@
 # Environment variables
 .env
 .env.local
+
+# Build output
+/build
+
+# Webpack/eslint cache
+node_modules/.cache/
