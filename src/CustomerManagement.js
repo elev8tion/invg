@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Users, Plus, Search, Edit3, Trash2, Save, X, 
-  Mail, Phone, MapPin, Building, ChevronDown, Check
+  Mail, Phone, MapPin
 } from 'lucide-react';
 import useCustomers from './hooks/useCustomers';
 
@@ -403,7 +403,6 @@ const CustomerManagement = ({ onCustomerSelect, onClose, businessId }) => {
                     background: '#374151',
                     color: '#d1d5db',
                     border: '1px solid #4b5563',
-                    border: 'none',
                     borderRadius: '12px',
                     cursor: 'pointer',
                     fontWeight: '500'
@@ -530,7 +529,6 @@ const CustomerManagement = ({ onCustomerSelect, onClose, businessId }) => {
                     background: '#374151',
                     color: '#d1d5db',
                     border: '1px solid #4b5563',
-                    border: 'none',
                     borderRadius: '12px',
                     cursor: 'pointer',
                     fontWeight: '500'

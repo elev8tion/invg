@@ -30,10 +30,10 @@ const BusinessModal = ({ business, currentUserId, onSave, onClose }) => {
 
   useEffect(() => {
     if (business) {
-      setFormData({
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         ...business
-      });
+      }));
     }
   }, [business]);
 

@@ -173,6 +173,7 @@ export const invoiceService = {
     const query = { business_id: businessId };
     if (filters.status) query.status = filters.status;
     if (filters.customerId) query.customer_id = filters.customerId;
+    if (filters.po_number) query.po_number = filters.po_number;
 
     const [invoices, customers, allPayments] = await Promise.all([
       ncb.search('invoices', query),
@@ -185,6 +186,7 @@ export const invoiceService = {
 
     return invoices
       .filter((inv) => withinRange(inv.invoice_date, filters.startDate, filters.endDate))
+      .filter((inv) => (filters.po_number ? inv.po_number === filters.po_number : true))
       .map((inv) => {
         const customer = customersById.get(inv.customer_id);
         return {
@@ -581,9 +583,10 @@ export const userService = {
   },
 
   async changePin(userId, currentPin, nextPin) {
-    const user = await this.getUser(userId);
-    if (!user) throw new Error('Account not found');
-    if (normalizePin(user.pin_code) !== normalizePin(currentPin)) {
+    const code = normalizePin(currentPin);
+    if (!isValidPin(code)) throw new Error('Current PIN must be 4 digits');
+    const matched = await this.getUserByPin(code);
+    if (!matched || Number(matched.id) !== Number(userId)) {
       throw new Error('Current PIN is incorrect');
     }
     return this.resetPin(userId, nextPin, userId);

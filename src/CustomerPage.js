@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, Plus, Search, Edit3, Trash2, Save, X, 
-  Mail, Phone, MapPin, Building, ArrowLeft, 
+  Users, Plus, Search, Edit3, Trash2, Save, 
+  Mail, Phone, MapPin, ArrowLeft, 
   Calendar, DollarSign, FileText, TrendingUp,
-  User, MoreVertical, Check
+  User, Check
 } from 'lucide-react';
 import useCustomers from './hooks/useCustomers';
 

@@ -2,13 +2,24 @@
 // Documentation: https://docs.emailit.com/
 
 class EmailService {
-  constructor() {
-    this.apiKey = process.env.REACT_APP_EMAILIT_API_KEY;
+  constructor(apiKey) {
+    this._apiKey = apiKey;
     this.apiUrl = 'https://api.emailit.com/v1';
-    
-    if (!this.apiKey) {
-      console.warn('⚠️ Emailit API key not configured. Emails will not be sent.');
-    }
+  }
+
+  get apiKey() {
+    return this._apiKey !== undefined ? this._apiKey : process.env.REACT_APP_EMAILIT_API_KEY;
+  }
+
+  set apiKey(val) {
+    this._apiKey = val;
+  }
+
+  formatCurrency(amount) {
+    return Number(amount || 0).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
   }
 
   // Send invoice email to customer
@@ -251,7 +262,7 @@ class EmailService {
             <tfoot>
               <tr>
                 <td colspan="3" style="padding: 12px; text-align: right; font-weight: bold;">Total:</td>
-                <td style="padding: 12px; text-align: right; font-size: 20px; color: #7c3aed; font-weight: bold;">$${total.toFixed(2)}</td>
+                <td style="padding: 12px; text-align: right; font-size: 20px; color: #7c3aed; font-weight: bold;">$${this.formatCurrency(total)}</td>
               </tr>
             </tfoot>
           </table>
@@ -329,12 +340,12 @@ Thank you for your business!
         <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 10px 10px;">
           <p>Hi ${customer.name || customer.company},</p>
           
-          <p>We've received your payment of <strong>$${payment.amount.toFixed(2)}</strong> for Invoice #${invoice.invoice.number}.</p>
+          <p>We've received your payment of <strong>$${this.formatCurrency(payment.amount)}</strong> for Invoice #${invoice.invoice.number}.</p>
           
           <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin: 0 0 10px 0; color: #059669;">Payment Details</h3>
             <table style="width: 100%;">
-              <tr><td>Amount:</td><td><strong>$${payment.amount.toFixed(2)}</strong></td></tr>
+              <tr><td>Amount:</td><td><strong>$${this.formatCurrency(payment.amount)}</strong></td></tr>
               <tr><td>Invoice:</td><td>#${invoice.invoice.number}</td></tr>
               <tr><td>Date:</td><td>${new Date().toLocaleDateString()}</td></tr>
               <tr><td>Reference:</td><td>${payment.reference || 'N/A'}</td></tr>
@@ -392,13 +403,13 @@ ${business.name}
         <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 10px 10px;">
           <p>Hi ${customer.name || customer.company},</p>
           
-          <p>This is a friendly reminder that Invoice #${invoice.invoice.number} for <strong>$${total.toFixed(2)}</strong> is now <strong>${daysOverdue} days overdue</strong>.</p>
+          <p>This is a friendly reminder that Invoice #${invoice.invoice.number} for <strong>$${this.formatCurrency(total)}</strong> is now <strong>${daysOverdue} days overdue</strong>.</p>
           
           <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin: 0 0 10px 0; color: #d97706;">Invoice Details</h3>
             <table style="width: 100%;">
               <tr><td>Invoice Number:</td><td><strong>#${invoice.invoice.number}</strong></td></tr>
-              <tr><td>Amount Due:</td><td><strong>$${total.toFixed(2)}</strong></td></tr>
+              <tr><td>Amount Due:</td><td><strong>$${this.formatCurrency(total)}</strong></td></tr>
               <tr><td>Due Date:</td><td>${invoice.invoice.dueDate}</td></tr>
               <tr><td>Days Overdue:</td><td><strong>${daysOverdue} days</strong></td></tr>
             </table>
@@ -462,9 +473,11 @@ ${business.name}
 
   // Log email to database (will integrate with the email_log table)
   async logEmail(emailData) {
-    // TODO: Save to the email_log table via invoiceService.sendInvoice()
+    const toAddress = typeof emailData.to === 'string'
+      ? emailData.to
+      : (Array.isArray(emailData.to) ? (emailData.to[0]?.email || emailData.to[0]) : '');
     console.log('📧 Email log:', {
-      to: emailData.to[0].email,
+      to: toAddress,
       subject: emailData.subject,
       status: emailData.status,
       timestamp: emailData.sent_at || emailData.attempted_at
@@ -472,5 +485,6 @@ ${business.name}
   }
 }
 
-// Export singleton instance
-export default new EmailService();
+const emailServiceInstance = new EmailService();
+export { EmailService };
+export default emailServiceInstance;

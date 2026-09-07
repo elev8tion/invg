@@ -69,7 +69,7 @@ describe('EmailService', () => {
       expect(html).toContain('My Business LLC');
       expect(html).toContain('John Doe');
       expect(html).toContain('Web Development Services');
-      expect(html).toContain('$1,595.00'); // Total after tax and discount
+      expect(html).toContain('$2,100.00'); // Total after tax and discount
       expect(html).toContain('Thank you for your business!');
     });
 
@@ -80,7 +80,7 @@ describe('EmailService', () => {
       expect(text).toContain('My Business LLC');
       expect(text).toContain('John Doe');
       expect(text).toContain('Web Development Services');
-      expect(text).toContain('TOTAL: $1595.00');
+      expect(text).toContain('TOTAL: $2100.00');
     });
 
     test('should generate payment confirmation HTML correctly', () => {
@@ -100,7 +100,7 @@ describe('EmailService', () => {
       expect(html).toContain('Payment Reminder');
       expect(html).toContain('#INV-001');
       expect(html).toContain('15 days overdue');
-      expect(html).toContain('$1,595.00');
+      expect(html).toContain('$2,100.00');
       expect(html).toContain('John Doe');
     });
   });

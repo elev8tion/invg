@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Plus, 
   DollarSign, 
@@ -15,7 +15,6 @@ import {
   ArrowDown,
   MoreVertical,
   Search,
-  Filter,
   ChevronDown,
   UserPlus,
   Package,
@@ -23,9 +22,8 @@ import {
 } from 'lucide-react';
 import PaymentHistory from './PaymentHistory';
 import PurchaseOrders from './PurchaseOrders';
-import ResponsiveWrapper, { ResponsiveGrid, ResponsiveCard, ResponsiveButton, ResponsiveHeading } from './components/ResponsiveWrapper';
 
-const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onCreateInvoiceForCustomer, currentBusiness, customers = [], userId }) => {
+const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onDeleteInvoice, onUpdateInvoice, onCreateInvoiceForCustomer, currentBusiness, customers = [], userId }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [invoices, setInvoices] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,21 +39,14 @@ const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onCreateInvoiceFo
     outstandingChange: 0
   });
 
-  useEffect(() => {
-    // Initialize invoices with status
-    const invoicesWithStatus = savedInvoices.map(inv => ({
-      ...inv,
-      status: inv.status || 'draft',
-      paidAmount: inv.paidAmount || 0,
-      viewedDate: inv.viewedDate || null,
-      sentDate: inv.sentDate || null,
-      paidDate: inv.paidDate || null
-    }));
-    setInvoices(invoicesWithStatus);
-    calculateStats(invoicesWithStatus);
-  }, [savedInvoices]);
+  const calculateInvoiceTotal = (invoice) => {
+    const subtotal = (invoice.items || []).reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+    const taxAmount = (subtotal * (invoice.tax || 0)) / 100;
+    const discountAmount = (subtotal * (invoice.discount || 0)) / 100;
+    return subtotal + taxAmount - discountAmount;
+  };
 
-  const calculateStats = (invoiceList) => {
+  const calculateStats = useCallback((invoiceList) => {
     const now = new Date();
     const thisMonth = now.getMonth();
     const thisYear = now.getFullYear();
@@ -66,7 +57,9 @@ const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onCreateInvoiceFo
     const clientSet = new Set();
 
     invoiceList.forEach(invoice => {
-      const amount = calculateInvoiceTotal(invoice);
+      const amount = (invoice.items || []).reduce((sum, item) => sum + (item.quantity * item.rate), 0) +
+        (((invoice.items || []).reduce((sum, item) => sum + (item.quantity * item.rate), 0) * (invoice.tax || 0)) / 100) -
+        (((invoice.items || []).reduce((sum, item) => sum + (item.quantity * item.rate), 0) * (invoice.discount || 0)) / 100);
       
       // Add to total revenue if sent or paid
       if (invoice.status === 'paid') {
@@ -99,14 +92,21 @@ const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onCreateInvoiceFo
       revenueChange,
       outstandingChange
     });
-  };
+  }, []);
 
-  const calculateInvoiceTotal = (invoice) => {
-    const subtotal = (invoice.items || []).reduce((sum, item) => sum + (item.quantity * item.rate), 0);
-    const taxAmount = (subtotal * (invoice.tax || 0)) / 100;
-    const discountAmount = (subtotal * (invoice.discount || 0)) / 100;
-    return subtotal + taxAmount - discountAmount;
-  };
+  useEffect(() => {
+    // Initialize invoices with status
+    const invoicesWithStatus = savedInvoices.map(inv => ({
+      ...inv,
+      status: inv.status || 'draft',
+      paidAmount: inv.paidAmount || 0,
+      viewedDate: inv.viewedDate || null,
+      sentDate: inv.sentDate || null,
+      paidDate: inv.paidDate || null
+    }));
+    setInvoices(invoicesWithStatus);
+    calculateStats(invoicesWithStatus);
+  }, [savedInvoices, calculateStats]);
 
   const updateInvoiceStatus = (invoiceId, newStatus) => {
     const updatedInvoices = invoices.map(inv => {
@@ -137,7 +137,10 @@ const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onCreateInvoiceFo
     setInvoices(updatedInvoices);
     calculateStats(updatedInvoices);
     
-    if (userId) {
+    const changed = updatedInvoices.find(inv => inv.id === invoiceId);
+    if (onUpdateInvoice && changed) {
+      onUpdateInvoice(invoiceId, changed);
+    } else if (userId) {
       localStorage.setItem(`savedInvoices:${userId}`, JSON.stringify(updatedInvoices));
     }
   };

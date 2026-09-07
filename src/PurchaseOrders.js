@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Package, Calendar, TrendingUp, FileText, Plus, Search, Filter } from 'lucide-react';
-import { purchaseOrderService, invoiceService } from './lib/db';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Package, Calendar, TrendingUp, FileText, Plus, Search, FileCheck } from 'lucide-react';
+import { purchaseOrderService, invoiceService, customerService, businessService } from './lib/db';
 
 const PurchaseOrders = ({ businessId }) => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [convertingPoId, setConvertingPoId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -15,31 +17,30 @@ const PurchaseOrders = ({ businessId }) => {
     customer_id: null
   });
 
-  useEffect(() => {
-    if (businessId) {
-      loadPurchaseOrders();
-    }
-  }, [businessId]);
-
-  const loadPurchaseOrders = async () => {
+  const loadPurchaseOrders = useCallback(async () => {
+    if (!businessId) return;
     setLoading(true);
     try {
-      // Get purchase orders from the database
-      const pos = await purchaseOrderService.getPurchaseOrders(businessId);
+      const [pos, custList] = await Promise.all([
+        purchaseOrderService.getPurchaseOrders(businessId),
+        customerService.getCustomers(businessId).catch(() => []),
+      ]);
+      setCustomers(custList || []);
       
       // Calculate invoiced amounts for each PO
       const posWithCalculations = await Promise.all(pos.map(async (po) => {
         // Get all invoices for this business with this PO number
         const invoices = await invoiceService.getInvoices(businessId, { po_number: po.po_number });
-        const invoicedAmount = invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
-        const remainingAmount = (po.total_amount || 0) - invoicedAmount;
+        const matchingInvoices = invoices.filter(inv => inv.po_number === po.po_number);
+        const invoicedAmount = matchingInvoices.reduce((sum, inv) => sum + (Number(inv.total_amount) || 0), 0);
+        const remainingAmount = (Number(po.total_amount) || 0) - invoicedAmount;
         
         return {
           id: po.id,
           po_number: po.po_number,
           customer_name: po.customer?.name || po.customer?.company || 'Unknown',
           project_name: po.project_name || 'Untitled Project',
-          amount: po.total_amount || 0,
+          amount: Number(po.total_amount) || 0,
           created_date: po.po_date || po.created_at?.split('T')[0],
           status: po.status || 'active',
           invoiced_amount: invoicedAmount,
@@ -51,12 +52,15 @@ const PurchaseOrders = ({ businessId }) => {
       setPurchaseOrders(posWithCalculations);
     } catch (error) {
       console.error('Error loading purchase orders:', error);
-      // Fallback to empty array
       setPurchaseOrders([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [businessId]);
+
+  useEffect(() => {
+    loadPurchaseOrders();
+  }, [loadPurchaseOrders]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -213,6 +217,29 @@ const PurchaseOrders = ({ businessId }) => {
                     <span className="text-gray-400">Remaining: </span>
                     <span className="text-white font-medium">${po.remaining_amount.toLocaleString()}</span>
                   </div>
+                  {po.status === 'active' && (
+                    <button
+                      onClick={async () => {
+                        if (!window.confirm(`Convert PO #${po.po_number} into a draft invoice?`)) return;
+                        try {
+                          setConvertingPoId(po.id);
+                          await purchaseOrderService.convertToInvoice(po.id, businessId);
+                          alert(`PO #${po.po_number} successfully converted to an invoice!`);
+                          await loadPurchaseOrders();
+                        } catch (err) {
+                          console.error('Failed to convert PO:', err);
+                          alert('Could not convert purchase order: ' + (err.message || 'unknown error'));
+                        } finally {
+                          setConvertingPoId(null);
+                        }
+                      }}
+                      disabled={convertingPoId === po.id}
+                      className="mt-2 inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-xs font-medium hover:from-purple-600 hover:to-pink-600 transition-colors disabled:opacity-50"
+                    >
+                      <FileCheck size={14} />
+                      {convertingPoId === po.id ? 'Converting...' : 'Convert to Invoice'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -231,6 +258,31 @@ const PurchaseOrders = ({ businessId }) => {
           <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md">
             <h3 className="text-xl font-bold text-white mb-4">Create Purchase Order</h3>
             <div className="space-y-4">
+              {customers.length > 0 && (
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Select Customer</label>
+                  <select
+                    value={newPO.customer_id || ''}
+                    onChange={(e) => {
+                      const selId = e.target.value ? Number(e.target.value) : null;
+                      const cust = customers.find(c => c.id === selId);
+                      setNewPO(prev => ({
+                        ...prev,
+                        customer_id: selId,
+                        customer_name: cust ? cust.name : prev.customer_name
+                      }));
+                    }}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500 text-sm"
+                  >
+                    <option value="">-- Choose Existing Customer (or type below) --</option>
+                    {customers.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {c.company ? `(${c.company})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <input
                 type="text"
                 placeholder="Customer Name"
@@ -264,12 +316,29 @@ const PurchaseOrders = ({ businessId }) => {
                 </button>
                 <button 
                   onClick={async () => {
+                    if (!newPO.customer_name.trim()) {
+                      alert('Please provide a customer name');
+                      return;
+                    }
                     try {
-                      const poNumber = `PO-${Date.now().toString().slice(-8)}`;
+                      let poNumber;
+                      try {
+                        poNumber = await businessService.getNextPoNumber(businessId);
+                      } catch {
+                        poNumber = `PO-${Date.now().toString().slice(-8)}`;
+                      }
+
+                      // Try to match customer if not explicitly chosen
+                      let custId = newPO.customer_id;
+                      if (!custId && customers.length > 0) {
+                        const matched = customers.find(c => c.name.toLowerCase() === newPO.customer_name.trim().toLowerCase());
+                        if (matched) custId = matched.id;
+                      }
+
                       const poData = {
                         business_id: businessId,
                         po_number: poNumber,
-                        customer_id: newPO.customer_id,
+                        customer_id: custId,
                         project_name: newPO.project_name,
                         po_date: new Date().toISOString().split('T')[0],
                         total_amount: parseFloat(newPO.amount) || 0,

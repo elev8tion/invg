@@ -1,19 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   MessageCircle, 
   X, 
-  Send, 
-  Eye, 
   EyeOff, 
   Copy, 
   Trash2, 
   ChevronRight,
   ChevronDown,
-  AlertCircle,
-  Star,
-  Zap,
-  Palette,
-  Layout,
   Plus,
   Check,
   Archive
@@ -31,20 +24,25 @@ const FeedbackCommandCenter = () => {
   const [showCommandCenter, setShowCommandCenter] = useState(false);
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [sessionId] = useState(Date.now());
+  const hasLoadedRef = useRef(false);
 
   // Load feedback queue from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('feedback-queue');
     if (saved) {
-      setFeedbackQueue(JSON.parse(saved));
+      try {
+        setFeedbackQueue(JSON.parse(saved));
+      } catch (e) {
+        console.warn('Failed to parse feedback queue from localStorage', e);
+      }
     }
+    hasLoadedRef.current = true;
   }, []);
 
-  // Save feedback queue to localStorage
+  // Save feedback queue to localStorage once loaded
   useEffect(() => {
-    if (feedbackQueue.length > 0) {
-      localStorage.setItem('feedback-queue', JSON.stringify(feedbackQueue));
-    }
+    if (!hasLoadedRef.current) return;
+    localStorage.setItem('feedback-queue', JSON.stringify(feedbackQueue));
   }, [feedbackQueue]);
 
   // Element selection logic
@@ -102,6 +100,7 @@ const FeedbackCommandCenter = () => {
       document.removeEventListener('mouseout', handleMouseOut);
       document.removeEventListener('click', handleClick, true);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
 
   // Helper functions
@@ -263,10 +262,11 @@ const FeedbackCommandCenter = () => {
       
       // Add nth-child if there are multiple similar elements
       if (current.parentElement) {
+        const elCurrent = current;
         const siblings = Array.from(current.parentElement.children);
-        const sameTagSiblings = siblings.filter(s => s.tagName === current.tagName);
+        const sameTagSiblings = siblings.filter(s => s.tagName === elCurrent.tagName);
         if (sameTagSiblings.length > 1) {
-          const index = sameTagSiblings.indexOf(current) + 1;
+          const index = sameTagSiblings.indexOf(elCurrent) + 1;
           selector += `:nth-of-type(${index})`;
         }
       }
@@ -359,7 +359,6 @@ const FeedbackCommandCenter = () => {
   // Generate formatted export
   const generateExport = () => {
     const grouped = groupFeedbackByCategory();
-    const priorityOrder = ['high', 'medium', 'low'];
     
     let output = `## Feedback Summary for ${window.location.hostname}
 Generated: ${new Date().toLocaleString()}
@@ -976,6 +975,20 @@ Total Items: ${feedbackQueue.length}
                             {item.feedback}
                           </div>
                         </div>
+                        <button
+                          onClick={() => updateItemStatus(item.id, item.status === 'completed' ? 'pending' : 'completed')}
+                          title={item.status === 'completed' ? 'Mark as pending' : 'Mark as completed'}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            color: item.status === 'completed' ? '#10b981' : '#999',
+                            transition: 'color 0.2s ease'
+                          }}
+                        >
+                          <Check size={16} />
+                        </button>
                         <button
                           onClick={() => removeItem(item.id)}
                           style={{

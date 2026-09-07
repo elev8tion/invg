@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DollarSign, Calendar, Check, Clock, AlertCircle, Download, Search } from 'lucide-react';
 import { invoiceService, paymentService } from './lib/db';
 
@@ -13,13 +13,11 @@ const PaymentHistory = ({ businessId }) => {
     totalOverdue: 0
   });
 
-  useEffect(() => {
-    if (businessId) {
-      loadPayments();
+  const loadPayments = useCallback(async () => {
+    if (!businessId) {
+      setLoading(false);
+      return;
     }
-  }, [businessId]);
-
-  const loadPayments = async () => {
     setLoading(true);
     try {
       // Get all invoices for the business
@@ -85,7 +83,11 @@ const PaymentHistory = ({ businessId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [businessId]);
+
+  useEffect(() => {
+    loadPayments();
+  }, [loadPayments]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -125,6 +127,33 @@ const PaymentHistory = ({ businessId }) => {
   const totalPending = stats.totalPending;
   const totalOverdue = stats.totalOverdue;
 
+  const handleExportCSV = () => {
+    if (filteredPayments.length === 0) {
+      alert('No payment records to export');
+      return;
+    }
+    const headers = ['Invoice', 'Customer', 'Amount', 'Date', 'Method', 'Status', 'Reference'];
+    const rows = filteredPayments.map(p => [
+      `"${p.invoice_number || ''}"`,
+      `"${p.customer_name || ''}"`,
+      p.amount || 0,
+      `"${p.payment_date || p.due_date || ''}"`,
+      `"${p.payment_method || '-'}"`,
+      `"${p.status || ''}"`,
+      `"${p.reference || '-'}"`
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `payment-history-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <div className="bg-gray-800 rounded-xl p-6">
@@ -143,7 +172,10 @@ const PaymentHistory = ({ businessId }) => {
     <div className="bg-gray-800 rounded-xl p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-white">Payment History</h2>
-        <button className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
+        <button
+          onClick={handleExportCSV}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+        >
           <Download size={18} />
           Export
         </button>

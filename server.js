@@ -81,7 +81,30 @@ async function ncbProxy(req, res) {
 
     const text = await upstream.text();
     res.status(upstream.status);
-    res.type(upstream.headers.get('content-type') || 'application/json');
+    const contentType = upstream.headers.get('content-type') || 'application/json';
+    res.type(contentType);
+
+    if (upstream.ok && table === 'app_users' && operation === 'read' && contentType.includes('json')) {
+      try {
+        const parsed = JSON.parse(text);
+        const stripPin = (u) => {
+          if (u && typeof u === 'object') {
+            const { pin_code: _, ...rest } = u;
+            return rest;
+          }
+          return u;
+        };
+        if (Array.isArray(parsed?.data)) {
+          parsed.data = parsed.data.map(stripPin);
+        } else if (parsed?.data) {
+          parsed.data = stripPin(parsed.data);
+        }
+        return res.json(parsed);
+      } catch {
+        return res.send(text);
+      }
+    }
+
     return res.send(text);
   } catch (error) {
     console.error(`[ncb-proxy] ${req.method} ${operation}/${table} failed:`, error.message);

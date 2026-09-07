@@ -18,17 +18,28 @@ import PinLock from './PinLock';
 import ChangePin from './ChangePin';
 import PeopleAdmin from './PeopleAdmin';
 import PaymentTermsField from './components/PaymentTermsField';
-import { paymentService, userService } from './lib/db';
+import { invoiceService, paymentService, userService } from './lib/db';
 import { clearSession, loadInvoices, publicUser, readSession, saveInvoices } from './lib/session';
 import useCustomers from './hooks/useCustomers';
 import DevTools from './components/DevTools';
 import './utils/cacheBuster'; // Import for side effects (keyboard shortcuts)
 
+export const getInvoiceTotal = (inv) => {
+  if (!inv) return 0;
+  const subtotal = (inv.items || []).reduce(
+    (sum, item) => sum + ((Number(item.quantity) || 0) * (Number(item.rate) || 0)),
+    0
+  );
+  const taxAmount = (subtotal * (Number(inv.tax) || 0)) / 100;
+  const discountAmount = (subtotal * (Number(inv.discount) || 0)) / 100;
+  return subtotal + taxAmount - discountAmount;
+};
+
 const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSavedInvoices, editingInvoice, setEditingInvoice, customers, currentBusiness, onCustomersChanged, userId }) => {
-  const [isListening, setIsListening] = useState(false);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [showCustomerManagement, setShowCustomerManagement] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailTargetInvoice, setEmailTargetInvoice] = useState(null);
   // Customers come from the database via App's useCustomers hook. Previously
   // this kept its own localStorage copy that never re-synced with the prop.
   const localCustomers = customers || [];
@@ -96,6 +107,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
       setPendingDownload(false);
       setTimeout(() => generatePDF(), 200);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingDownload, currentView]);
 
   const calculateSubtotal = () => {
@@ -188,17 +200,74 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
     });
   };
 
-  const saveInvoice = () => {
-    const newInvoice = {
+  const saveInvoice = async () => {
+    const isExisting = invoiceData.id && savedInvoices.some(inv => inv.id === invoiceData.id);
+    const invoiceId = isExisting ? invoiceData.id : Date.now();
+    let dbId = invoiceData.dbId || null;
+
+    if (currentBusiness?.id) {
+      try {
+        const subtotal = calculateSubtotal();
+        const total = calculateTotal();
+        const matchedCustomer = localCustomers.find(c => 
+          (c.name && invoiceData.client?.name && c.name.toLowerCase() === invoiceData.client.name.toLowerCase()) ||
+          (c.email && invoiceData.client?.email && c.email.toLowerCase() === invoiceData.client.email.toLowerCase())
+        );
+
+        const dbInvoicePayload = {
+          business_id: currentBusiness.id,
+          customer_id: matchedCustomer?.id || null,
+          invoice_number: invoiceData.invoice.number,
+          invoice_date: invoiceData.invoice.date,
+          due_date: invoiceData.invoice.dueDate,
+          payment_terms: invoiceData.invoice.terms,
+          status: invoiceData.status || 'draft',
+          subtotal: Number(subtotal.toFixed(2)),
+          tax_rate: Number(invoiceData.tax) || 0,
+          tax_amount: Number(((subtotal * (invoiceData.tax || 0)) / 100).toFixed(2)),
+          discount_rate: Number(invoiceData.discount) || 0,
+          discount_amount: Number(((subtotal * (invoiceData.discount || 0)) / 100).toFixed(2)),
+          total_amount: Number(total.toFixed(2)),
+          balance_due: Number(total.toFixed(2)),
+          notes: invoiceData.notes || '',
+        };
+
+        const dbItemsPayload = (invoiceData.items || []).map((item, index) => ({
+          description: item.description || '',
+          quantity: Number(item.quantity) || 0,
+          rate: Number(item.rate) || 0,
+          amount: Number((item.amount || (Number(item.quantity) * Number(item.rate))).toFixed(2)),
+          sort_order: index,
+        }));
+
+        if (dbId) {
+          await invoiceService.updateInvoice(dbId, dbInvoicePayload, dbItemsPayload);
+        } else {
+          const created = await invoiceService.createInvoice(dbInvoicePayload, dbItemsPayload);
+          if (created?.id) dbId = created.id;
+        }
+      } catch (err) {
+        console.warn('Could not sync invoice to database, continuing with local storage:', err);
+      }
+    }
+
+    const savedRecord = {
       ...invoiceData,
-      id: Date.now(),
-      savedAt: new Date().toISOString()
+      id: invoiceId,
+      dbId: dbId,
+      savedAt: isExisting ? (invoiceData.savedAt || new Date().toISOString()) : new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
-    
-    const updated = [...savedInvoices, newInvoice];
+
+    let updated;
+    if (isExisting) {
+      updated = savedInvoices.map(inv => inv.id === invoiceId ? savedRecord : inv);
+    } else {
+      updated = [...savedInvoices, savedRecord];
+    }
     setSavedInvoices(updated);
     saveInvoices(userId, updated);
-    alert('Invoice saved successfully!');
+    alert(isExisting ? 'Invoice updated successfully!' : 'Invoice saved successfully!');
     clearInvoice();
   };
 
@@ -289,9 +358,10 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
       if (!invoice) return;
       
       // Create a payment record in the database for the full invoice amount
+      const amountDue = invoice.invoice?.total || getInvoiceTotal(invoice);
       const payment = {
-        invoice_id: invoiceId,
-        amount: invoice.invoice?.total || calculateTotal(),
+        invoice_id: invoice.dbId || invoiceId,
+        amount: amountDue,
         payment_date: new Date().toISOString().split('T')[0],
         payment_method: 'Manual',
         reference_number: `MANUAL-${Date.now()}`,
@@ -299,8 +369,6 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
       };
       
       // If we have a valid database invoice ID, record the payment there
-      // NOTE: nothing currently assigns `dbId` -- App.js keeps invoices in local
-      // state only, so this branch never runs. Pre-existing, carried over as-is.
       if (invoice.dbId) {
         await paymentService.recordPayment({
           ...payment,
@@ -384,7 +452,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
                       )}
                     </div>
                     <p className="text-gray-400">Client: {invoice.client.name || 'Unnamed Client'}</p>
-                    <p className="text-gray-400">Amount: ${calculateTotal().toFixed(2)}</p>
+                    <p className="text-gray-400">Amount: ${getInvoiceTotal(invoice).toFixed(2)}</p>
                     <p className="text-gray-500 text-sm">Saved: {new Date(invoice.savedAt).toLocaleDateString()}</p>
                     {invoice.paidDate && (
                       <p className="text-green-400 text-sm">Paid: {new Date(invoice.paidDate).toLocaleDateString()}</p>
@@ -411,7 +479,10 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
                       <Edit3 size={16} />
                     </button>
                     <button
-                      onClick={() => setShowEmailModal(true)}
+                      onClick={() => {
+                        setEmailTargetInvoice(invoice);
+                        setShowEmailModal(true);
+                      }}
                       className="p-2 bg-purple-500 rounded-xl hover:bg-purple-600 transition-colors"
                       title="Send Email"
                     >
@@ -934,7 +1005,10 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
                 Save Invoice
               </button>
               <button
-                onClick={() => setShowEmailModal(true)}
+                onClick={() => {
+                  setEmailTargetInvoice(invoiceData);
+                  setShowEmailModal(true);
+                }}
                 className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl hover:from-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center justify-center gap-2 font-medium"
               >
                 <Send size={20} />
@@ -1068,21 +1142,29 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
       )}
       
       {/* Email Modal */}
-      <EmailModal
-        isOpen={showEmailModal}
-        onClose={() => setShowEmailModal(false)}
-        invoice={invoiceData}
-        customer={invoiceData.client}
-        business={currentBusiness || {
-          name: invoiceData.company.name,
-          email: invoiceData.company.email,
-          phone: invoiceData.company.phone,
-          address: invoiceData.company.address,
-          city: invoiceData.company.city,
-          state: invoiceData.company.state,
-          zip: invoiceData.company.zip
-        }}
-      />
+      {(() => {
+        const emailInvoice = emailTargetInvoice || invoiceData;
+        return (
+          <EmailModal
+            isOpen={showEmailModal}
+            onClose={() => {
+              setShowEmailModal(false);
+              setEmailTargetInvoice(null);
+            }}
+            invoice={emailInvoice}
+            customer={emailInvoice?.client}
+            business={currentBusiness || {
+              name: emailInvoice?.company?.name || 'Your Company Name',
+              email: emailInvoice?.company?.email || '',
+              phone: emailInvoice?.company?.phone || '',
+              address: emailInvoice?.company?.address || '',
+              city: emailInvoice?.company?.city || '',
+              state: emailInvoice?.company?.state || '',
+              zip: emailInvoice?.company?.zip || ''
+            }}
+          />
+        );
+      })()}
     </div>
   );
 };
@@ -1142,10 +1224,12 @@ function App() {
     saveInvoices(currentUser?.id, updated);
   };
 
-  const handleSaveInvoice = (invoice) => {
-    const updated = [...savedInvoices, invoice];
-    setSavedInvoices(updated);
-    saveInvoices(currentUser?.id, updated);
+  const handleUpdateInvoice = (invoiceId, updates) => {
+    setSavedInvoices((prev) => {
+      const next = prev.map((inv) => (inv.id === invoiceId ? { ...inv, ...updates } : inv));
+      if (currentUser?.id) saveInvoices(currentUser.id, next);
+      return next;
+    });
   };
 
   const handleUnlock = (user) => {
@@ -1330,6 +1414,7 @@ function App() {
             savedInvoices={savedInvoices}
             onEditInvoice={handleEditInvoice}
             onDeleteInvoice={handleDeleteInvoice}
+            onUpdateInvoice={handleUpdateInvoice}
             onCreateInvoiceForCustomer={handleCreateInvoiceForCustomer}
             currentBusiness={currentBusiness}
             userId={currentUser.id}

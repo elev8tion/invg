@@ -18,10 +18,15 @@ export const clearAllCaches = async () => {
       try {
         const databases = await indexedDB.databases();
         await Promise.all(
-          databases.map(db => {
-            indexedDB.deleteDatabase(db.name);
-            console.log(`✅ IndexedDB ${db.name} cleared`);
-          })
+          databases.map(db => new Promise((resolve) => {
+            const req = indexedDB.deleteDatabase(db.name);
+            req.onsuccess = () => {
+              console.log(`✅ IndexedDB ${db.name} cleared`);
+              resolve();
+            };
+            req.onerror = () => resolve();
+            req.onblocked = () => resolve();
+          }))
         );
       } catch (e) {
         console.log('⚠️ Could not clear IndexedDB:', e);
@@ -33,8 +38,8 @@ export const clearAllCaches = async () => {
       try {
         const cacheNames = await caches.keys();
         await Promise.all(
-          cacheNames.map(name => {
-            caches.delete(name);
+          cacheNames.map(async (name) => {
+            await caches.delete(name);
             console.log(`✅ Cache ${name} cleared`);
           })
         );
@@ -48,8 +53,8 @@ export const clearAllCaches = async () => {
       try {
         const registrations = await navigator.serviceWorker.getRegistrations();
         await Promise.all(
-          registrations.map(reg => {
-            reg.unregister();
+          registrations.map(async (reg) => {
+            await reg.unregister();
             console.log('✅ Service worker unregistered');
           })
         );
@@ -60,15 +65,15 @@ export const clearAllCaches = async () => {
     
     console.log('🎉 All caches cleared! Reloading...');
     
-    // Force reload without cache
+    // Force reload
     setTimeout(() => {
-      window.location.reload(true);
+      window.location.reload();
     }, 500);
     
   } catch (error) {
     console.error('❌ Error clearing caches:', error);
     // Still try to reload
-    window.location.reload(true);
+    window.location.reload();
   }
 };
 

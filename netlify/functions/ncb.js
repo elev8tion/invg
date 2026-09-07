@@ -68,10 +68,38 @@ exports.handler = async (event) => {
       body: hasBody ? event.body : undefined,
     });
 
+    const text = await upstream.text();
+    const contentType = upstream.headers.get('content-type') || 'application/json';
+
+    if (upstream.ok && table === 'app_users' && operation === 'read' && contentType.includes('json')) {
+      try {
+        const parsed = JSON.parse(text);
+        const stripPin = (u) => {
+          if (u && typeof u === 'object') {
+            const { pin_code: _, ...rest } = u;
+            return rest;
+          }
+          return u;
+        };
+        if (Array.isArray(parsed?.data)) {
+          parsed.data = parsed.data.map(stripPin);
+        } else if (parsed?.data) {
+          parsed.data = stripPin(parsed.data);
+        }
+        return {
+          statusCode: upstream.status,
+          headers: { 'Content-Type': contentType },
+          body: JSON.stringify(parsed),
+        };
+      } catch {
+        // Fallback to raw text if parsing fails
+      }
+    }
+
     return {
       statusCode: upstream.status,
-      headers: { 'Content-Type': upstream.headers.get('content-type') || 'application/json' },
-      body: await upstream.text(),
+      headers: { 'Content-Type': contentType },
+      body: text,
     };
   } catch (error) {
     console.error(`[ncb-proxy] ${event.httpMethod} ${operation}/${table} failed:`, error.message);
