@@ -80,7 +80,11 @@ export const businessService = {
   },
 
   async createBusiness(business) {
-    return ncb.createAndFetch('businesses', business);
+    const { id, created_at, updated_at, user_id, ...record } = business || {};
+    return ncb.createAndFetch('businesses', {
+      ...record,
+      is_active: record.is_active === undefined ? TRUE : Number(record.is_active) ? TRUE : FALSE,
+    });
   },
 
   async linkUser(businessId, userId, role = 'owner') {

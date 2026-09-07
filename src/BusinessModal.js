@@ -93,19 +93,29 @@ const BusinessModal = ({ business, currentUserId, onSave, onClose }) => {
 
     setSaving(true);
     try {
+      const { id, created_at, updated_at, user_id, ...cleanData } = formData;
+
       // Save to the database
       if (business?.id) {
         // Update existing business
-        const updated = await businessService.updateBusiness(business.id, formData);
+        const updates = {
+          ...cleanData,
+          is_active: business.is_active !== undefined ? Number(business.is_active) : 1,
+          next_invoice_number: Number(formData.next_invoice_number) || 1,
+          next_po_number: Number(formData.next_po_number) || 1,
+          default_tax_rate: Number(formData.default_tax_rate) || 0,
+        };
+        const updated = await businessService.updateBusiness(business.id, updates);
         onSave(updated);
       } else {
         // Create new business
         // Ensure all required fields are included
         const businessData = {
-          ...formData,
-          is_active: true,
-          next_invoice_number: formData.next_invoice_number || 1,
-          created_at: new Date().toISOString()
+          ...cleanData,
+          is_active: 1,
+          next_invoice_number: Number(formData.next_invoice_number) || 1,
+          next_po_number: Number(formData.next_po_number) || 1,
+          default_tax_rate: Number(formData.default_tax_rate) || 0,
         };
         const created = await businessService.createBusiness(businessData);
         if (currentUserId) {
@@ -115,7 +125,7 @@ const BusinessModal = ({ business, currentUserId, onSave, onClose }) => {
       }
     } catch (error) {
       console.error('Error saving business:', error);
-      alert('Failed to save business. Please try again.');
+      alert(`Failed to save business: ${error.message || 'Please try again.'}`);
     } finally {
       setSaving(false);
     }

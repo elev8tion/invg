@@ -12,8 +12,8 @@ const BusinessSwitcher = ({ userId, currentBusiness, onBusinessChange, onCreateB
   const loadBusinesses = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('BusinessSwitcher: Loading businesses...');
-      
+      setError(null);
+
       if (!userId) {
         setBusinesses([]);
         return;
@@ -21,25 +21,16 @@ const BusinessSwitcher = ({ userId, currentBusiness, onBusinessChange, onCreateB
 
       const mine = await businessService.getUserBusinesses(userId);
       const active = (mine || []).filter((b) => Number(b.is_active) !== 0);
-      console.log('BusinessSwitcher: Loaded businesses:', active);
+      setBusinesses(active);
 
-      if (active.length > 0) {
-        setBusinesses(active);
-        if (!currentBusiness) {
-          console.log('BusinessSwitcher: Setting first business as current:', active[0]);
-          onBusinessChange(active[0]);
-        }
-      } else {
-        console.log('BusinessSwitcher: No businesses found');
-        setBusinesses([]);
+      if (active.length > 0 && !currentBusiness) {
+        onBusinessChange(active[0]);
       }
     } catch (error) {
       console.error('BusinessSwitcher: Error loading businesses:', error);
-      console.error('BusinessSwitcher: Error details:', error.message, error.stack);
       setBusinesses([]);
       setError('Failed to load businesses. Please check your connection.');
     } finally {
-      console.log('BusinessSwitcher: Setting loading to false');
       setLoading(false);
     }
   }, [userId, currentBusiness, onBusinessChange]);

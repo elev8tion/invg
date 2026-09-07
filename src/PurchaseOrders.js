@@ -40,7 +40,7 @@ const PurchaseOrders = ({ businessId }) => {
           id: po.id,
           po_number: po.po_number,
           customer_name: po.customer?.name || po.customer?.company || 'Unknown',
-          project_name: po.project_name || 'Untitled Project',
+          project_name: po.project_name || po.notes || 'Untitled Project',
           amount: Number(po.total_amount) || 0,
           created_date: po.po_date || po.created_at?.split('T')[0],
           status: po.status || 'active',
@@ -345,8 +345,8 @@ const PurchaseOrders = ({ businessId }) => {
                       const poData = {
                         business_id: businessId,
                         po_number: poNumber,
-                        customer_id: custId,
-                        project_name: newPO.project_name,
+                        customer_id: custId || null,
+                        notes: newPO.project_name || '',
                         po_date: new Date().toISOString().split('T')[0],
                         total_amount: parseFloat(newPO.amount) || 0,
                         status: 'active'

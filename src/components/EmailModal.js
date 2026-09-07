@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { money } from '../lib/format';
 import { invoiceTotal } from '../lib/invoiceTotals';
 import { Send, X, Mail, Loader, CheckCircle, AlertCircle } from 'lucide-react';
@@ -8,12 +8,24 @@ const EmailModal = ({ isOpen, onClose, invoice, customer, business }) => {
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState(null); // 'success', 'error', null
   const [emailOptions, setEmailOptions] = useState({
-    to: customer?.email || '',
-    subject: `Invoice #${invoice?.invoice?.number || ''} from ${business?.name || 'Your Business'}`,
+    to: '',
+    subject: '',
     message: '',
     attachPDF: true,
     sendCopy: false
   });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setStatus(null);
+    setEmailOptions({
+      to: customer?.email || '',
+      subject: `Invoice #${invoice?.invoice?.number || ''} from ${business?.name || 'Your Business'}`,
+      message: '',
+      attachPDF: true,
+      sendCopy: false
+    });
+  }, [isOpen, customer?.email, invoice?.invoice?.number, business?.name]);
 
   if (!isOpen) return null;
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, Download, Save, Edit3, Plus, Trash2, Eye, LayoutDashboard, ChevronDown, Users, Send, CheckCircle, User, X } from 'lucide-react';
 import CustomerManagement from './CustomerManagement';
 import './App.css';
@@ -17,7 +17,7 @@ import PinLock from './PinLock';
 import ChangePin from './ChangePin';
 import PeopleAdmin from './PeopleAdmin';
 import PaymentTermsField from './components/PaymentTermsField';
-import { invoiceService, paymentService, userService } from './lib/db';
+import { businessService, invoiceService, paymentService, userService } from './lib/db';
 import { clearSession, loadInvoices, publicUser, readSession, saveInvoices } from './lib/session';
 import useCustomers from './hooks/useCustomers';
 import { downloadInvoicePdf } from './lib/invoicePdf';
@@ -29,6 +29,55 @@ import './utils/cacheBuster'; // Import for side effects (keyboard shortcuts)
 /** @deprecated Kept as the public name other modules already import. */
 export const getInvoiceTotal = invoiceTotal;
 
+const todayISO = () => new Date().toISOString().split('T')[0];
+const plusDaysISO = (days) =>
+  new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+function companyFromBusiness(business) {
+  if (!business) {
+    return {
+      name: 'Your Company Name',
+      address: '123 Business Street',
+      city: 'City',
+      state: 'State',
+      zip: '12345',
+      email: 'contact@company.com',
+      phone: '(555) 123-4567',
+    };
+  }
+  return {
+    name: business.name || '',
+    address: business.address || '',
+    city: business.city || '',
+    state: business.state || '',
+    zip: business.zip || '',
+    email: business.email || '',
+    phone: business.phone || '',
+  };
+}
+
+function blankInvoiceData(business) {
+  const prefix = business?.invoice_prefix || 'INV';
+  const next = Number(business?.next_invoice_number) || 1;
+  return {
+    company: companyFromBusiness(business),
+    client: { name: '', address: '', email: '' },
+    invoice: {
+      number: business
+        ? `${prefix}-${String(next).padStart(6, '0')}`
+        : `INV-${Date.now().toString().slice(-6)}`,
+      date: todayISO(),
+      dueDate: plusDaysISO(30),
+      terms: business?.default_payment_terms || 'Net 30',
+    },
+    items: [{ description: '', date: todayISO(), quantity: 0, rate: 0, amount: 0 }],
+    notes: '',
+    tax: Number(business?.default_tax_rate) || 0,
+    discount: 0,
+    logo: '',
+  };
+}
+
 const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSavedInvoices, editingInvoice, setEditingInvoice, customers, currentBusiness, onCustomersChanged, userId }) => {
   const [mobileTab, setMobileTab] = useState('form'); // 'form' | 'preview' on mobile
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
@@ -38,35 +87,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
   // Customers come from the database via App's useCustomers hook. Previously
   // this kept its own localStorage copy that never re-synced with the prop.
   const localCustomers = customers || [];
-  const [invoiceData, setInvoiceData] = useState({
-    company: {
-      name: 'Your Company Name',
-      address: '123 Business Street',
-      city: 'City',
-      state: 'State',
-      zip: '12345',
-      email: 'contact@company.com',
-      phone: '(555) 123-4567'
-    },
-    client: {
-      name: '',
-      address: '',
-      email: ''
-    },
-    invoice: {
-      number: `INV-${Date.now().toString().slice(-6)}`,
-      date: new Date().toISOString().split('T')[0],
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      terms: 'Net 30'
-    },
-    items: [
-      { description: '', date: new Date().toISOString().split('T')[0], quantity: 0, rate: 0, amount: 0 }
-    ],
-    notes: '',
-    tax: 0,
-    discount: 0,
-    logo: ''
-  });
+  const [invoiceData, setInvoiceData] = useState(() => blankInvoiceData(currentBusiness));
   
   const fileInputRef = useRef(null);
   const logoInputRef = useRef(null);
@@ -83,17 +104,28 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
     }
   }, [editingInvoice, setEditingInvoice]);
 
-  // A fresh invoice follows the business default. The business usually loads
-  // after this component mounts, so seed the field once it arrives -- unless
-  // the user has already chosen terms themselves.
+  // A fresh invoice follows the business. The business usually loads after
+  // this component mounts, so seed company / number / terms once it arrives
+  // -- unless the user is already editing a saved invoice or typed a client.
   useEffect(() => {
-    const businessDefault = currentBusiness?.default_payment_terms;
-    if (!businessDefault || termsTouched) return;
-    setInvoiceData((prev) =>
-      prev.invoice.terms === businessDefault
-        ? prev
-        : { ...prev, invoice: { ...prev.invoice, terms: businessDefault } }
-    );
+    if (!currentBusiness) return;
+    setInvoiceData((prev) => {
+      if (prev.id || prev.dbId || prev.client?.name) return prev;
+      const next = blankInvoiceData(currentBusiness);
+      return {
+        ...next,
+        invoice: {
+          ...next.invoice,
+          terms: termsTouched ? prev.invoice.terms : next.invoice.terms,
+          date: prev.invoice.date || next.invoice.date,
+          dueDate: prev.invoice.dueDate || next.invoice.dueDate,
+        },
+        items: prev.items,
+        notes: prev.notes,
+        discount: prev.discount,
+        logo: prev.logo,
+      };
+    });
   }, [currentBusiness, termsTouched]);
 
   // Every amount on this screen -- and in the PDF and the email -- comes from
@@ -148,35 +180,8 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
   };
 
   const clearInvoice = () => {
-    setInvoiceData({
-      company: {
-        name: 'Your Company Name',
-        address: '123 Business Street',
-        city: 'City',
-        state: 'State',
-        zip: '12345',
-        email: 'contact@company.com',
-        phone: '(555) 123-4567'
-      },
-      client: {
-        name: '',
-        address: '',
-        email: ''
-      },
-      invoice: {
-        number: `INV-${Date.now().toString().slice(-6)}`,
-        date: new Date().toISOString().split('T')[0],
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        terms: 'Net 30'
-      },
-      items: [
-        { description: '', date: new Date().toISOString().split('T')[0], quantity: 0, rate: 0, amount: 0 }
-      ],
-      notes: '',
-      tax: 0,
-      discount: 0,
-      logo: ''
-    });
+    setTermsTouched(false);
+    setInvoiceData(blankInvoiceData(currentBusiness));
   };
 
   const saveInvoice = async () => {
@@ -196,9 +201,9 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
           business_id: currentBusiness.id,
           customer_id: matchedCustomer?.id || null,
           invoice_number: invoiceData.invoice.number,
-          invoice_date: invoiceData.invoice.date,
-          due_date: invoiceData.invoice.dueDate,
-          payment_terms: invoiceData.invoice.terms,
+          invoice_date: invoiceData.invoice.date || todayISO(),
+          due_date: invoiceData.invoice.dueDate || null,
+          payment_terms: invoiceData.invoice.terms || null,
           status: invoiceData.status || 'draft',
           subtotal: Number(subtotal.toFixed(2)),
           tax_rate: Number(invoiceData.tax) || 0,
@@ -222,10 +227,19 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
           await invoiceService.updateInvoice(dbId, dbInvoicePayload, dbItemsPayload);
         } else {
           const created = await invoiceService.createInvoice(dbInvoicePayload, dbItemsPayload);
-          if (created?.id) dbId = created.id;
+          if (created?.id) {
+            dbId = created.id;
+            try {
+              await businessService.getNextInvoiceNumber(currentBusiness.id);
+            } catch (bumpErr) {
+              console.warn('Could not bump invoice number:', bumpErr);
+            }
+          }
         }
       } catch (err) {
-        console.warn('Could not sync invoice to database, continuing with local storage:', err);
+        console.error('Could not sync invoice to database:', err);
+        alert(`Could not save invoice to the database: ${err.message || 'Please try again.'}`);
+        return;
       }
     }
 
@@ -1105,55 +1119,23 @@ function App() {
   };
 
   const handleCreateInvoiceForCustomer = (customer) => {
-    // Pre-fill invoice with customer data
     const newInvoice = {
-      company: currentBusiness ? {
-        name: currentBusiness.name,
-        address: currentBusiness.address || '123 Business Street',
-        city: currentBusiness.city || 'City',
-        state: currentBusiness.state || 'State',
-        zip: currentBusiness.zip || '12345',
-        email: currentBusiness.email,
-        phone: currentBusiness.phone || '(555) 123-4567'
-      } : savedInvoices[0]?.company || {
-        name: 'Your Company Name',
-        address: '123 Business Street',
-        city: 'City',
-        state: 'State',
-        zip: '12345',
-        email: 'contact@company.com',
-        phone: '(555) 123-4567'
-      },
+      ...blankInvoiceData(currentBusiness),
       client: {
         name: customer.name,
         address: `${customer.address || ''}${customer.address && (customer.city || customer.state || customer.zip) ? ', ' : ''}${customer.city || ''}${customer.city && customer.state ? ', ' : ''}${customer.state || ''} ${customer.zip || ''}`.trim(),
         email: customer.email || ''
       },
-      invoice: {
-        number: currentBusiness ? 
-          `${currentBusiness.invoice_prefix}-${String(currentBusiness.next_invoice_number).padStart(6, '0')}` : 
-          `INV-${Date.now().toString().slice(-6)}`,
-        date: new Date().toISOString().split('T')[0],
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        terms: currentBusiness?.default_payment_terms || 'Net 30'
-      },
-      items: [{ description: '', date: new Date().toISOString().split('T')[0], quantity: 0, rate: 0, amount: 0 }],
-      notes: '',
-      tax: currentBusiness?.default_tax_rate || 0,
-      discount: 0,
-      logo: ''
     };
     
     setEditingInvoice(newInvoice);
     setCurrentView('create');
   };
 
-  const handleBusinessChange = (business) => {
+  const handleBusinessChange = useCallback((business) => {
     setCurrentBusiness(business);
-    // useCustomers reloads whenever the id changes, so switching business
-    // (or loading the first one) refreshes the list on its own.
     setCurrentBusinessId(business?.id ?? null);
-  };
+  }, []);
 
   const handleCreateBusiness = () => {
     setEditingBusiness(null);
@@ -1167,20 +1149,16 @@ function App() {
 
   const handleSaveBusiness = (business) => {
     setShowBusinessModal(false);
-    // Ensure business has all necessary fields with defaults
     const businessWithDefaults = {
       ...business,
       invoice_prefix: business.invoice_prefix || 'INV',
-      next_invoice_number: business.next_invoice_number || 1,
+      next_invoice_number: Number(business.next_invoice_number) || 1,
       default_payment_terms: business.default_payment_terms || 'Net 30',
-      default_tax_rate: business.default_tax_rate || 0,
-      is_active: business.is_active !== undefined ? business.is_active : true
+      default_tax_rate: Number(business.default_tax_rate) || 0,
+      is_active: business.is_active !== undefined ? Number(business.is_active) : 1,
     };
     setCurrentBusiness(businessWithDefaults);
-    console.log('Saved business:', businessWithDefaults);
-    
-    // Refresh the business list in the BusinessSwitcher
-    // This will happen automatically when BusinessSwitcher re-renders
+    setCurrentBusinessId(businessWithDefaults.id ?? null);
   };
 
   const accountOverlays = currentUser && (
