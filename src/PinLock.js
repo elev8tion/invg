@@ -69,7 +69,10 @@ const PinLock = ({ onUnlock }) => {
 
         <p className="h-6 text-sm text-red-400 mb-4">{error}</p>
 
-        <div className="grid grid-cols-3 gap-3">
+        {/* mobile-keep-grid: a numeric keypad is 3 across at every width.
+            Without it the blanket .grid-cols-3 rule in global-responsive-fix.css
+            reflows it to two columns between 640px and 1024px. */}
+        <div className="grid grid-cols-3 gap-3 mobile-keep-grid">
           {KEYS.map((key, index) => {
             if (key === '') return <span key={`empty-${index}`} />;
             if (key === 'del') {

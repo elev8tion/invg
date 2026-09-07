@@ -54,8 +54,11 @@
     font-size: 16px; /* Prevents zoom on iOS */
   }
   
-  /* Table responsive layout */
-  table {
+  /* Data tables scroll sideways. Scoped to the data-table wrappers: as a bare
+     `table` rule the `white-space: nowrap` stopped invoice line-item
+     descriptions from ever wrapping, so the document ran off its own sheet. */
+  .overflow-x-auto table,
+  .table-responsive table {
     display: block;
     overflow-x: auto;
     white-space: nowrap;
@@ -406,25 +409,85 @@
    ======================================== */
 
 @media print {
-  /* Hide non-essential elements */
-  .no-print,
-  button,
-  .nav-responsive,
-  .fab-create-invoice {
-    display: none !important;
+  /* Print the invoice document and nothing else.
+     
+     This block used to do two harmful things. `* { background: white; color:
+     black }` flattened the whole document -- the purple total, the red discount
+     row and the grey column header all printed as plain black on white -- and
+     `page-break-inside: avoid` on #invoice-preview asked the browser to keep the
+     entire invoice on one sheet, so anything longer than a page was clipped
+     instead of flowing onto the next one.
+     
+     The rules are scoped to the invoice now, and they mirror how
+     src/lib/invoicePdf.js paginates: never break through a row, repeat the
+     column header on each sheet. */
+
+  @page {
+    size: A4;
+    margin: 15mm;
   }
-  
-  /* Reset colors for print */
-  * {
-    background: white !important;
-    color: black !important;
+
+  /* Everything on the page is hidden, then the invoice alone is shown and
+     lifted to the top -- the app shell, nav and editor form never print. */
+  body * {
+    visibility: hidden !important;
   }
-  
-  /* Ensure invoice fits on page */
+
+  #invoice-preview,
+  #invoice-preview * {
+    visibility: visible !important;
+  }
+
+  /* Every declaration here is !important on purpose. A printed A4 page is about
+     700 CSS px wide, so the `max-width: 768px` and `max-width: 1024px` mobile
+     blocks in the other stylesheets all match while printing, and several of
+     them are themselves !important. Without this the invoice inherits mobile
+     sizing and clipping on paper. */
   #invoice-preview {
-    max-width: 100%;
-    page-break-inside: avoid;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    font-size: 10pt !important;
+
+    /* Keep the accent colours the screen and the PDF both use. */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
+
+  /* The app shell is a full-height dark column; left alone it contributes a
+     blank first sheet before the absolutely-positioned invoice. */
+  html,
+  body,
+  #root {
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    overflow: visible !important;
+  }
+
+  /* Let a long invoice flow across sheets, but never split a line item. */
+  #invoice-preview tr,
+  #invoice-preview th,
+  #invoice-preview td {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Repeat the column header on every printed page, as the PDF does. */
+  #invoice-preview thead {
+    display: table-header-group;
+  }
+
 }
 
 /* ========================================

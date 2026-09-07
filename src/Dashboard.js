@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { money } from './lib/format';
+import { invoiceTotal } from './lib/invoiceTotals';
 import { 
   Plus, 
   DollarSign, 
@@ -38,13 +40,6 @@ const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onDeleteInvoice, 
     revenueChange: 0,
     outstandingChange: 0
   });
-
-  const calculateInvoiceTotal = (invoice) => {
-    const subtotal = (invoice.items || []).reduce((sum, item) => sum + (item.quantity * item.rate), 0);
-    const taxAmount = (subtotal * (invoice.tax || 0)) / 100;
-    const discountAmount = (subtotal * (invoice.discount || 0)) / 100;
-    return subtotal + taxAmount - discountAmount;
-  };
 
   const calculateStats = useCallback((invoiceList) => {
     const now = new Date();
@@ -214,7 +209,7 @@ const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onDeleteInvoice, 
                 {Math.abs(stats.revenueChange)}%
               </span>
             </div>
-            <h3 className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</h3>
+            <h3 className="text-2xl font-bold">{money(stats.totalRevenue)}</h3>
             <p className="text-gray-400 text-sm mt-1">Total Revenue</p>
           </div>
 
@@ -228,7 +223,7 @@ const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onDeleteInvoice, 
                 {Math.abs(stats.outstandingChange)}%
               </span>
             </div>
-            <h3 className="text-2xl font-bold">${stats.outstandingPayments.toFixed(2)}</h3>
+            <h3 className="text-2xl font-bold">{money(stats.outstandingPayments)}</h3>
             <p className="text-gray-400 text-sm mt-1">Outstanding</p>
           </div>
 
@@ -241,7 +236,7 @@ const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onDeleteInvoice, 
                 <Calendar size={16} className="inline" />
               </span>
             </div>
-            <h3 className="text-2xl font-bold">${stats.monthlyIncome.toFixed(2)}</h3>
+            <h3 className="text-2xl font-bold">{money(stats.monthlyIncome)}</h3>
             <p className="text-gray-400 text-sm mt-1">This Month</p>
           </div>
 
@@ -499,7 +494,7 @@ const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onDeleteInvoice, 
                             {invoice.client?.name || 'No client'}
                           </p>
                           <p className="text-sm font-semibold mt-1">
-                            ${calculateInvoiceTotal(invoice).toFixed(2)}
+                            {money(invoiceTotal(invoice))}
                           </p>
                         </div>
                       ))}
@@ -529,7 +524,7 @@ const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onDeleteInvoice, 
                             Invoice #{invoice.invoice?.number}
                           </p>
                           <p className="text-xs text-gray-400">
-                            {invoice.client?.name || 'No client'} • ${calculateInvoiceTotal(invoice).toFixed(2)}
+                            {invoice.client?.name || 'No client'} • {money(invoiceTotal(invoice))}
                           </p>
                         </div>
                       </div>

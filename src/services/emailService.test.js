@@ -80,7 +80,11 @@ describe('EmailService', () => {
       expect(text).toContain('My Business LLC');
       expect(text).toContain('John Doe');
       expect(text).toContain('Web Development Services');
-      expect(text).toContain('TOTAL: $2100.00');
+      // Same amount, same formatting as the HTML version above: both go through
+      // money() now. This previously asserted '$2100.00', so the plain-text and
+      // HTML halves of one email disagreed.
+      expect(text).toContain('TOTAL: $2,100.00');
+      expect(text).toContain('10 x $150.00 = $1,500.00');
     });
 
     test('should generate payment confirmation HTML correctly', () => {

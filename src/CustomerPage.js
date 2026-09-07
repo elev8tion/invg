@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { money } from './lib/format';
 import { 
   Users, Plus, Search, Edit3, Trash2, Save, 
   Mail, Phone, MapPin, ArrowLeft, 
@@ -218,7 +219,7 @@ const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer, businessId, user
               <span className="text-sm text-gray-400">Revenue</span>
             </div>
             <h3 className="text-2xl font-bold">
-              ${stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {money(stats.totalRevenue)}
             </h3>
             <p className="text-gray-400 text-sm mt-1">Total Paid</p>
           </div>
@@ -229,7 +230,7 @@ const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer, businessId, user
               <span className="text-sm text-gray-400">Average</span>
             </div>
             <h3 className="text-2xl font-bold">
-              ${stats.averageInvoiceValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {money(stats.averageInvoiceValue)}
             </h3>
             <p className="text-gray-400 text-sm mt-1">Per Customer</p>
           </div>
@@ -324,7 +325,7 @@ const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer, businessId, user
                             </div>
                             <div className="flex gap-4 mt-3 text-sm">
                               <span className="text-green-400">
-                                ${revenue.toFixed(2)} revenue
+                                {money(revenue)} revenue
                               </span>
                               <span className="text-blue-400">
                                 {invoiceCount} invoice{invoiceCount !== 1 ? 's' : ''}
@@ -589,7 +590,7 @@ const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer, businessId, user
                       <div className="bg-gray-700/50 p-3 rounded-xl">
                         <p className="text-gray-400 mb-1">Total Revenue</p>
                         <p className="text-xl font-bold text-green-400">
-                          ${getCustomerRevenue(selectedCustomer).toFixed(2)}
+                          {money(getCustomerRevenue(selectedCustomer))}
                         </p>
                       </div>
                       <div className="bg-gray-700/50 p-3 rounded-xl">

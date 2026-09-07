@@ -6,9 +6,8 @@ import './styles/responsive.css'; // Import responsive design system
 import './styles/mobile-override.css'; // Import mobile-specific overrides
 import './styles/invoice-mobile-fix.css'; // Import invoice mobile fixes
 import './styles/global-responsive-fix.css'; // Import global responsive fixes for ALL components
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import EmailModal from './components/EmailModal';
+import InvoicePreview from './components/InvoicePreview';
 import Dashboard from './Dashboard';
 import FeedbackCommandCenter from './FeedbackCommandCenter';
 import CustomerPage from './CustomerPage';
@@ -21,19 +20,14 @@ import PaymentTermsField from './components/PaymentTermsField';
 import { invoiceService, paymentService, userService } from './lib/db';
 import { clearSession, loadInvoices, publicUser, readSession, saveInvoices } from './lib/session';
 import useCustomers from './hooks/useCustomers';
+import { downloadInvoicePdf } from './lib/invoicePdf';
+import { money } from './lib/format';
+import { invoiceTotal, invoiceTotals } from './lib/invoiceTotals';
 import DevTools from './components/DevTools';
 import './utils/cacheBuster'; // Import for side effects (keyboard shortcuts)
 
-export const getInvoiceTotal = (inv) => {
-  if (!inv) return 0;
-  const subtotal = (inv.items || []).reduce(
-    (sum, item) => sum + ((Number(item.quantity) || 0) * (Number(item.rate) || 0)),
-    0
-  );
-  const taxAmount = (subtotal * (Number(inv.tax) || 0)) / 100;
-  const discountAmount = (subtotal * (Number(inv.discount) || 0)) / 100;
-  return subtotal + taxAmount - discountAmount;
-};
+/** @deprecated Kept as the public name other modules already import. */
+export const getInvoiceTotal = invoiceTotal;
 
 const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSavedInvoices, editingInvoice, setEditingInvoice, customers, currentBusiness, onCustomersChanged, userId }) => {
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
@@ -73,7 +67,6 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
     logo: ''
   });
   
-  const [pendingDownload, setPendingDownload] = useState(false);
   const fileInputRef = useRef(null);
   const logoInputRef = useRef(null);
 
@@ -102,24 +95,9 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
     );
   }, [currentBusiness, termsTouched]);
 
-  useEffect(() => {
-    if (pendingDownload && currentView === 'create') {
-      setPendingDownload(false);
-      setTimeout(() => generatePDF(), 200);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingDownload, currentView]);
-
-  const calculateSubtotal = () => {
-    return invoiceData.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
-  };
-
-  const calculateTotal = () => {
-    const subtotal = calculateSubtotal();
-    const taxAmount = (subtotal * invoiceData.tax) / 100;
-    const discountAmount = (subtotal * invoiceData.discount) / 100;
-    return subtotal + taxAmount - discountAmount;
-  };
+  // Every amount on this screen -- and in the PDF and the email -- comes from
+  // this one breakdown, so they cannot disagree.
+  const totals = invoiceTotals(invoiceData);
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -207,8 +185,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
 
     if (currentBusiness?.id) {
       try {
-        const subtotal = calculateSubtotal();
-        const total = calculateTotal();
+        const { subtotal, taxAmount, discountAmount, total } = totals;
         const matchedCustomer = localCustomers.find(c => 
           (c.name && invoiceData.client?.name && c.name.toLowerCase() === invoiceData.client.name.toLowerCase()) ||
           (c.email && invoiceData.client?.email && c.email.toLowerCase() === invoiceData.client.email.toLowerCase())
@@ -224,9 +201,9 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
           status: invoiceData.status || 'draft',
           subtotal: Number(subtotal.toFixed(2)),
           tax_rate: Number(invoiceData.tax) || 0,
-          tax_amount: Number(((subtotal * (invoiceData.tax || 0)) / 100).toFixed(2)),
+          tax_amount: Number(taxAmount.toFixed(2)),
           discount_rate: Number(invoiceData.discount) || 0,
-          discount_amount: Number(((subtotal * (invoiceData.discount || 0)) / 100).toFixed(2)),
+          discount_amount: Number(discountAmount.toFixed(2)),
           total_amount: Number(total.toFixed(2)),
           balance_due: Number(total.toFixed(2)),
           notes: invoiceData.notes || '',
@@ -271,85 +248,15 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
     clearInvoice();
   };
 
-  const generatePDF = () => {
-    const input = document.getElementById('invoice-preview');
-    
-    // Configure html2canvas for better quality
-    html2canvas(input, {
-      scale: 3, // Even higher resolution for better quality
-      useCORS: true,
-      logging: false,
-      letterRendering: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff'
-    }).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png', 1.0);
-      
-      // Create PDF in portrait A4
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      // A4 dimensions in mm
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      
-      // Calculate the aspect ratio of the canvas
-      const canvasAspectRatio = canvas.height / canvas.width;
-      
-      // Set image width to fill the page width (with small margins)
-      const margin = 10; // 10mm margins on each side
-      const imgWidth = pageWidth - (2 * margin);
-      const imgHeight = imgWidth * canvasAspectRatio;
-      
-      // Calculate how many pages we need
-      const totalPages = Math.ceil(imgHeight / (pageHeight - (2 * margin)));
-      
-      if (totalPages === 1) {
-        // Single page - center vertically if needed
-        const yPosition = margin;
-        pdf.addImage(imgData, 'PNG', margin, yPosition, imgWidth, imgHeight, undefined, 'MEDIUM');
-      } else {
-        // Multi-page support
-        const pageImgHeight = pageHeight - (2 * margin);
-        
-        for (let page = 0; page < totalPages; page++) {
-          if (page > 0) {
-            pdf.addPage();
-          }
-          
-          // Calculate the source rectangle for this page
-          const srcY = page * (pageImgHeight / imgHeight) * canvas.height;
-          const srcHeight = (pageImgHeight / imgHeight) * canvas.height;
-          
-          // Create a temporary canvas for this page section
-          const pageCanvas = document.createElement('canvas');
-          pageCanvas.width = canvas.width;
-          pageCanvas.height = Math.min(srcHeight, canvas.height - srcY);
-          
-          const ctx = pageCanvas.getContext('2d');
-          ctx.drawImage(canvas, 0, -srcY);
-          
-          const pageData = pageCanvas.toDataURL('image/png', 1.0);
-          const currentPageHeight = Math.min(pageImgHeight, imgHeight - (page * pageImgHeight));
-          
-          pdf.addImage(pageData, 'PNG', margin, margin, imgWidth, currentPageHeight, undefined, 'MEDIUM');
-        }
-      }
-      
-      // Add metadata
-      pdf.setProperties({
-        title: `Invoice ${invoiceData.invoice.number}`,
-        subject: `Invoice for ${invoiceData.client.name || 'Client'}`,
-        author: invoiceData.company.name,
-        keywords: 'invoice, business',
-        creator: 'Professional Invoice Generator'
-      });
-      
-      // Save the PDF
-      pdf.save(`Invoice-${invoiceData.invoice.number}.pdf`);
-    }).catch((error) => {
+  // Rendered straight from state by src/lib/invoicePdf.js -- no DOM capture, so
+  // the layout is identical regardless of window size and the text stays real.
+  const generatePDF = (invoice = invoiceData) => {
+    try {
+      downloadInvoicePdf(invoice);
+    } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
-    });
+    }
   };
 
   const markInvoiceAsPaid = async (invoiceId) => {
@@ -452,7 +359,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
                       )}
                     </div>
                     <p className="text-gray-400">Client: {invoice.client.name || 'Unnamed Client'}</p>
-                    <p className="text-gray-400">Amount: ${getInvoiceTotal(invoice).toFixed(2)}</p>
+                    <p className="text-gray-400">Amount: {money(getInvoiceTotal(invoice))}</p>
                     <p className="text-gray-500 text-sm">Saved: {new Date(invoice.savedAt).toLocaleDateString()}</p>
                     {invoice.paidDate && (
                       <p className="text-green-400 text-sm">Paid: {new Date(invoice.paidDate).toLocaleDateString()}</p>
@@ -489,11 +396,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
                       <Send size={16} />
                     </button>
                     <button
-                      onClick={() => {
-                        setInvoiceData(invoice);
-                        setPendingDownload(true);
-                        setCurrentView('create');
-                      }}
+                      onClick={() => generatePDF(invoice)}
                       className="p-2 bg-green-500 rounded-xl hover:bg-green-600 transition-colors"
                       title="Download Invoice"
                     >
@@ -886,7 +789,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
                       {/* Amount display */}
                       <div className="amount-display">
                         <div className="amount-label">Total Amount</div>
-                        <div className="amount-value">${item.amount.toFixed(2)}</div>
+                        <div className="amount-value">{money(item.amount)}</div>
                       </div>
                       
                       {/* Remove button */}
@@ -949,7 +852,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
                         <div className="col-span-3 text-right">
                           <label className="block text-xs text-gray-400 mb-1">Amount</label>
                           <div className="text-lg font-semibold text-green-400 bg-gray-600 rounded-xl p-3 amount-field">
-                            ${item.amount.toFixed(2)}
+                            {money(item.amount)}
                           </div>
                         </div>
                       </div>
@@ -1015,7 +918,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
                 Send Email
               </button>
               <button
-                onClick={generatePDF}
+                onClick={() => generatePDF()}
                 className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 flex items-center justify-center gap-2 font-medium"
               >
                 <Download size={20} />
@@ -1024,98 +927,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
             </div>
           </div>
 
-          {/* Preview */}
-          <div id="invoice-preview" className="bg-white text-black rounded-3xl p-8 border border-gray-700 h-fit">
-            <div className="flex justify-between items-start mb-8">
-              <div>
-                {invoiceData.logo && (
-                  <img src={invoiceData.logo} alt="Logo" className="h-16 mb-2 object-contain" />
-                )}
-                <h1 className="text-3xl font-bold text-gray-800 mb-4">INVOICE</h1>
-                <div className="text-sm text-gray-600">
-                  <p className="font-semibold text-lg text-gray-800">{invoiceData.company.name}</p>
-                  <p>{invoiceData.company.address}</p>
-                  <p>{invoiceData.company.city}, {invoiceData.company.state} {invoiceData.company.zip}</p>
-                  <p>{invoiceData.company.email}</p>
-                  <p>{invoiceData.company.phone}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <h2 className="text-2xl font-bold text-purple-600 mb-2">#{invoiceData.invoice.number}</h2>
-                <div className="text-sm text-gray-600">
-                  <p><span className="font-medium">Date:</span> {invoiceData.invoice.date}</p>
-                  <p><span className="font-medium">Due:</span> {invoiceData.invoice.dueDate}</p>
-                  <p><span className="font-medium">Terms:</span> {invoiceData.invoice.terms}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-800 mb-2">Bill To:</h3>
-              <div className="text-sm text-gray-600">
-                <p className="font-medium text-gray-800">{invoiceData.client.name || 'Client Name'}</p>
-                <p>{invoiceData.client.address || 'Client Address'}</p>
-                <p>{invoiceData.client.email || 'client@email.com'}</p>
-              </div>
-            </div>
-
-            <div className="border border-gray-300 rounded-lg overflow-hidden mb-6">
-              <div className="bg-gray-100 grid grid-cols-12 gap-2 p-3 text-sm font-semibold text-gray-800">
-                <div className="col-span-4">Description</div>
-                <div className="col-span-2 text-center">Date</div>
-                <div className="col-span-2 text-center">Qty</div>
-                <div className="col-span-2 text-center">Rate</div>
-                <div className="col-span-2 text-right">Amount</div>
-              </div>
-              
-              {invoiceData.items.map((item, index) => (
-                <div key={index} className="grid grid-cols-12 gap-2 p-3 text-sm border-t border-gray-200">
-                  <div className="col-span-4 text-gray-800">{item.description || 'Item description'}</div>
-                  <div className="col-span-2 text-center text-gray-600">{new Date(item.date).toLocaleDateString()}</div>
-                  <div className="col-span-2 text-center text-gray-600">{item.quantity}</div>
-                  <div className="col-span-2 text-center text-gray-600">${item.rate.toFixed(2)}</div>
-                  <div className="col-span-2 text-right font-medium text-gray-800">${item.amount.toFixed(2)}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-end">
-              <div className="w-64 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-medium text-gray-800">${calculateSubtotal().toFixed(2)}</span>
-                </div>
-                
-                {invoiceData.discount > 0 && (
-                  <div className="flex justify-between text-red-600">
-                    <span>Discount ({invoiceData.discount}%):</span>
-                    <span>-${(calculateSubtotal() * invoiceData.discount / 100).toFixed(2)}</span>
-                  </div>
-                )}
-                
-                {invoiceData.tax > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tax ({invoiceData.tax}%):</span>
-                    <span className="font-medium text-gray-800">${(calculateSubtotal() * invoiceData.tax / 100).toFixed(2)}</span>
-                  </div>
-                )}
-                
-                <div className="border-t border-gray-300 pt-2">
-                  <div className="flex justify-between text-lg font-bold">
-                    <span className="text-gray-800">Total:</span>
-                    <span className="text-purple-600">${calculateTotal().toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {invoiceData.notes && (
-              <div className="mt-6 pt-6 border-t border-gray-300">
-                <h3 className="font-semibold text-gray-800 mb-2">Notes:</h3>
-                <p className="text-sm text-gray-600">{invoiceData.notes}</p>
-              </div>
-            )}
-          </div>
+          <InvoicePreview invoice={invoiceData} />
         </div>
       </div>
 

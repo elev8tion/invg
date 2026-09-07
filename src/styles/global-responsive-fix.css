@@ -124,9 +124,19 @@
     padding: 1rem;
   }
   
-  /* Override table display on mobile */
+  /* Card-per-row treatment for DATA tables on mobile.
+     
+     These selectors used to be bare `table tbody tr` / `table tbody td`, which
+     matched every table in the app. Once the invoice preview became a real
+     <table> document (src/components/InvoicePreview.js) that meant the printed
+     invoice's rows rendered as dark rounded cards on the white sheet, and the
+     Date/Due/Terms block turned into three grey boxes on a phone.
+     
+     `.table-responsive` already gets the full card treatment, properly scoped,
+     in responsive.css -- this block only needs to cover the payment history
+     table, which uses the `.overflow-x-auto` wrapper. */
   @media (max-width: 640px) {
-    table tbody tr {
+    .overflow-x-auto table tbody tr {
       display: block !important;
       background: rgba(55, 65, 81, 0.5) !important;
       margin-bottom: 1rem !important;
@@ -135,14 +145,14 @@
       border: 1px solid rgba(75, 85, 99, 0.3) !important;
     }
     
-    table tbody td {
+    .overflow-x-auto table tbody td {
       display: flex !important;
       justify-content: space-between !important;
       padding: 0.5rem 0 !important;
       border: none !important;
     }
     
-    table tbody td::before {
+    .overflow-x-auto table tbody td::before {
       content: attr(data-label);
       font-weight: 600;
       color: rgba(156, 163, 175, 1);
@@ -227,13 +237,23 @@
     gap: 2rem !important;
   }
   
-  /* Invoice preview becomes sticky on mobile */
+  /* The invoice preview flows with the page on small screens.
+     
+     It used to be `position: sticky` with `max-height: calc(100vh - 2rem);
+     overflow-y: auto`, which did two bad things. On a phone it turned the
+     document into a small scroll box nested inside the page scroll -- two
+     scrollbars fighting over the same drag. And because a printed A4 page is
+     about 700 CSS px wide, this `max-width: 768px` block applied when printing
+     too, so the max-height clipped the invoice to a single screen's worth and
+     everything below it silently vanished from the printout.
+     
+     The layout above already stacks the editor and the preview into one column,
+     so the preview simply flows. Print rules live in mobile-override.css. */
   @media (max-width: 768px) {
     #invoice-preview {
-      position: sticky !important;
-      top: 1rem !important;
-      max-height: calc(100vh - 2rem) !important;
-      overflow-y: auto !important;
+      position: static !important;
+      max-height: none !important;
+      overflow: visible !important;
     }
   }
 }
@@ -321,15 +341,17 @@
    ======================================== */
 
 @media (max-width: 768px) {
-  /* All tables become scrollable */
-  table {
+  /* Data tables scroll sideways rather than squashing.
+     
+     Scoped to the wrappers that actually hold data tables. As bare `table` this
+     forced `min-width: 500px` onto every table on the page -- including the
+     invoice document, which then overflowed its own sheet on a 390px phone and
+     on paper. */
+  .overflow-x-auto table,
+  .table-responsive table {
     display: block !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
-  }
-  
-  /* Minimum width for tables */
-  table {
     min-width: 500px !important;
   }
   

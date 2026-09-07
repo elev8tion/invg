@@ -37,4 +37,5 @@ npm run build
 - React 18
 - Tailwind CSS
 - Lucide React Icons
+- jsPDF (vector invoice PDFs -- see `src/lib/invoicePdf.js`)
 - Local Storage API

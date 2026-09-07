@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { money } from './lib/format';
 import { Package, Calendar, TrendingUp, FileText, Plus, Search, FileCheck } from 'lucide-react';
 import { purchaseOrderService, invoiceService, customerService, businessService } from './lib/db';
 
@@ -132,7 +133,7 @@ const PurchaseOrders = ({ businessId }) => {
               <span className="text-sm">Total PO Value</span>
             </div>
             <p className="text-2xl font-bold text-white">
-              ${totalPOValue.toLocaleString()}
+              {money(totalPOValue)}
             </p>
           </div>
           <div className="bg-gray-700 rounded-lg p-4">
@@ -141,7 +142,7 @@ const PurchaseOrders = ({ businessId }) => {
               <span className="text-sm">Invoiced</span>
             </div>
             <p className="text-2xl font-bold text-white">
-              ${totalInvoiced.toLocaleString()}
+              {money(totalInvoiced)}
             </p>
           </div>
           <div className="bg-gray-700 rounded-lg p-4">
@@ -150,7 +151,7 @@ const PurchaseOrders = ({ businessId }) => {
               <span className="text-sm">Remaining</span>
             </div>
             <p className="text-2xl font-bold text-white">
-              ${totalRemaining.toLocaleString()}
+              {money(totalRemaining)}
             </p>
           </div>
         </div>
@@ -198,7 +199,7 @@ const PurchaseOrders = ({ businessId }) => {
                       <span className="text-gray-400">{po.created_date}</span>
                     </div>
                     <div className="text-gray-400">
-                      Value: <span className="text-white font-medium">${po.amount.toLocaleString()}</span>
+                      Value: <span className="text-white font-medium">{money(po.amount)}</span>
                     </div>
                   </div>
                 </div>
@@ -215,7 +216,7 @@ const PurchaseOrders = ({ businessId }) => {
                   </div>
                   <div className="text-sm">
                     <span className="text-gray-400">Remaining: </span>
-                    <span className="text-white font-medium">${po.remaining_amount.toLocaleString()}</span>
+                    <span className="text-white font-medium">{money(po.remaining_amount)}</span>
                   </div>
                   {po.status === 'active' && (
                     <button

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { money } from './lib/format';
 import { DollarSign, Calendar, Check, Clock, AlertCircle, Download, Search } from 'lucide-react';
 import { invoiceService, paymentService } from './lib/db';
 
@@ -188,7 +189,7 @@ const PaymentHistory = ({ businessId }) => {
             <span className="text-sm">Received</span>
           </div>
           <p className="text-2xl font-bold text-white">
-            ${totalReceived.toLocaleString()}
+            {money(totalReceived)}
           </p>
         </div>
         <div className="bg-gray-700 rounded-lg p-4">
@@ -197,7 +198,7 @@ const PaymentHistory = ({ businessId }) => {
             <span className="text-sm">Pending</span>
           </div>
           <p className="text-2xl font-bold text-white">
-            ${totalPending.toLocaleString()}
+            {money(totalPending)}
           </p>
         </div>
         <div className="bg-gray-700 rounded-lg p-4">
@@ -206,7 +207,7 @@ const PaymentHistory = ({ businessId }) => {
             <span className="text-sm">Overdue</span>
           </div>
           <p className="text-2xl font-bold text-white">
-            ${totalOverdue.toLocaleString()}
+            {money(totalOverdue)}
           </p>
         </div>
       </div>
@@ -254,7 +255,7 @@ const PaymentHistory = ({ businessId }) => {
                   <span className="font-mono text-sm">{payment.invoice_number}</span>
                 </td>
                 <td className="py-3">{payment.customer_name}</td>
-                <td className="py-3 font-semibold">${payment.amount.toLocaleString()}</td>
+                <td className="py-3 font-semibold">{money(payment.amount)}</td>
                 <td className="py-3">
                   <div className="flex items-center gap-1">
                     <Calendar size={14} className="text-gray-400" />

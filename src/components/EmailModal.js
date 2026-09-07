@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { money } from '../lib/format';
+import { invoiceTotal } from '../lib/invoiceTotals';
 import { Send, X, Mail, Loader, CheckCircle, AlertCircle } from 'lucide-react';
 import emailService from '../services/emailService';
 
@@ -163,7 +165,7 @@ const EmailModal = ({ isOpen, onClose, invoice, customer, business }) => {
           <div className="bg-gray-700/50 rounded-lg p-3 text-sm text-gray-400">
             <p className="font-medium text-gray-300 mb-1">Invoice Details:</p>
             <p>Invoice #{invoice?.invoice?.number}</p>
-            <p>Amount: ${invoice ? calculateTotal(invoice).toFixed(2) : '0.00'}</p>
+            <p>Amount: {money(invoiceTotal(invoice))}</p>
             <p>Due: {invoice?.invoice?.dueDate}</p>
           </div>
 
@@ -205,14 +207,6 @@ const EmailModal = ({ isOpen, onClose, invoice, customer, business }) => {
       </div>
     </div>
   );
-};
-
-// Helper function to calculate total
-const calculateTotal = (invoice) => {
-  const subtotal = invoice.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
-  const tax = subtotal * (invoice.tax / 100);
-  const discount = subtotal * (invoice.discount / 100);
-  return subtotal + tax - discount;
 };
 
 export default EmailModal;

@@ -163,39 +163,44 @@
     font-size: 12px;
   }
   
-  #invoice-preview .grid.grid-cols-12 {
-    display: block;
-  }
-  
-  #invoice-preview .col-span-2,
-  #invoice-preview .col-span-4 {
-    display: inline-block;
-    width: auto;
-    margin-right: 8px;
-  }
-  
-  /* Stack the invoice header sections */
-  #invoice-preview .invoice-header {
-    display: flex;
+  /* Stack the company block above the invoice metadata rather than letting the
+     two columns crush each other. The preview is a <table>-based document now
+     (see src/components/InvoicePreview.js); the old rules here targeted the
+     grid-cols-12 markup it replaced and no longer matched anything. */
+  #invoice-preview > .flex.justify-between {
     flex-direction: column;
     gap: 16px;
   }
-  
-  /* Invoice items table in preview */
+
+  #invoice-preview > .flex.justify-between > .text-right {
+    text-align: left;
+  }
+
+  #invoice-preview > .flex.justify-between > .text-right table {
+    margin-left: 0;
+  }
+
+  /* Line items. Five columns in ~330px of usable width, so the padding comes
+     off the outer edges and the description column gives up room to the
+     figures, which must not wrap or clip. */
   #invoice-preview table {
     font-size: 11px;
   }
-  
+
   #invoice-preview th,
   #invoice-preview td {
-    padding: 4px;
+    padding: 6px 3px;
   }
-  
-  /* Hide less important columns on very small screens */
-  @media (max-width: 375px) {
-    #invoice-preview .hide-mobile {
-      display: none;
-    }
+
+  #invoice-preview th:first-child,
+  #invoice-preview td:first-child {
+    width: 34%;
+    padding-left: 0;
+  }
+
+  #invoice-preview th:last-child,
+  #invoice-preview td:last-child {
+    padding-right: 0;
   }
 }
 

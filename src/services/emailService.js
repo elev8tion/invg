@@ -1,6 +1,9 @@
 // Email Service using Emailit API
 // Documentation: https://docs.emailit.com/
 
+import { formatDate, money } from '../lib/format';
+import { invoiceTotal } from '../lib/invoiceTotals';
+
 class EmailService {
   constructor(apiKey) {
     this._apiKey = apiKey;
@@ -15,11 +18,13 @@ class EmailService {
     this._apiKey = val;
   }
 
+  /**
+   * @deprecated Call `money()` from src/lib/format directly. Kept because the
+   * templates and tests already reference it. Note it now returns the leading
+   * `$` as well, so callers must not prepend their own.
+   */
   formatCurrency(amount) {
-    return Number(amount || 0).toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
+    return money(amount);
   }
 
   // Send invoice email to customer
@@ -196,8 +201,8 @@ class EmailService {
       <tr>
         <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${item.description}</td>
         <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.quantity}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">$${item.rate.toFixed(2)}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">$${(item.quantity * item.rate).toFixed(2)}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${money(item.rate)}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${money(Number(item.quantity) * Number(item.rate))}</td>
       </tr>
     `).join('');
 
@@ -262,7 +267,7 @@ class EmailService {
             <tfoot>
               <tr>
                 <td colspan="3" style="padding: 12px; text-align: right; font-weight: bold;">Total:</td>
-                <td style="padding: 12px; text-align: right; font-size: 20px; color: #7c3aed; font-weight: bold;">$${this.formatCurrency(total)}</td>
+                <td style="padding: 12px; text-align: right; font-size: 20px; color: #7c3aed; font-weight: bold;">${money(total)}</td>
               </tr>
             </tfoot>
           </table>
@@ -288,7 +293,7 @@ class EmailService {
   generateInvoicePlainText(invoice, customer, business) {
     const total = this.calculateTotal(invoice);
     const itemsList = invoice.items.map(item => 
-      `  - ${item.description}: ${item.quantity} x $${item.rate.toFixed(2)} = $${(item.quantity * item.rate).toFixed(2)}`
+      `  - ${item.description}: ${item.quantity} x ${money(item.rate)} = ${money(Number(item.quantity) * Number(item.rate))}`
     ).join('\n');
 
     return `
@@ -307,14 +312,14 @@ ${customer.address || ''}
 ${customer.email}
 ${customer.phone || ''}
 
-Invoice Date: ${invoice.invoice.date}
-Due Date: ${invoice.invoice.dueDate}
+Invoice Date: ${formatDate(invoice.invoice.date)}
+Due Date: ${formatDate(invoice.invoice.dueDate)}
 Terms: ${invoice.invoice.terms}
 
 ITEMS:
 ${itemsList}
 
-TOTAL: $${total.toFixed(2)}
+TOTAL: ${money(total)}
 
 ${invoice.notes ? `Notes: ${invoice.notes}` : ''}
 
@@ -340,14 +345,14 @@ Thank you for your business!
         <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 10px 10px;">
           <p>Hi ${customer.name || customer.company},</p>
           
-          <p>We've received your payment of <strong>$${this.formatCurrency(payment.amount)}</strong> for Invoice #${invoice.invoice.number}.</p>
+          <p>We've received your payment of <strong>${money(payment.amount)}</strong> for Invoice #${invoice.invoice.number}.</p>
           
           <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin: 0 0 10px 0; color: #059669;">Payment Details</h3>
             <table style="width: 100%;">
-              <tr><td>Amount:</td><td><strong>$${this.formatCurrency(payment.amount)}</strong></td></tr>
+              <tr><td>Amount:</td><td><strong>${money(payment.amount)}</strong></td></tr>
               <tr><td>Invoice:</td><td>#${invoice.invoice.number}</td></tr>
-              <tr><td>Date:</td><td>${new Date().toLocaleDateString()}</td></tr>
+              <tr><td>Date:</td><td>${formatDate(new Date())}</td></tr>
               <tr><td>Reference:</td><td>${payment.reference || 'N/A'}</td></tr>
             </table>
           </div>
@@ -368,12 +373,12 @@ Payment Received!
 
 Hi ${customer.name || customer.company},
 
-We've received your payment of $${payment.amount.toFixed(2)} for Invoice #${invoice.invoice.number}.
+We've received your payment of ${money(payment.amount)} for Invoice #${invoice.invoice.number}.
 
 Payment Details:
-- Amount: $${payment.amount.toFixed(2)}
+- Amount: ${money(payment.amount)}
 - Invoice: #${invoice.invoice.number}
-- Date: ${new Date().toLocaleDateString()}
+- Date: ${formatDate(new Date())}
 - Reference: ${payment.reference || 'N/A'}
 
 Your account has been updated and the invoice has been marked as paid.
@@ -403,13 +408,13 @@ ${business.name}
         <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 10px 10px;">
           <p>Hi ${customer.name || customer.company},</p>
           
-          <p>This is a friendly reminder that Invoice #${invoice.invoice.number} for <strong>$${this.formatCurrency(total)}</strong> is now <strong>${daysOverdue} days overdue</strong>.</p>
+          <p>This is a friendly reminder that Invoice #${invoice.invoice.number} for <strong>${money(total)}</strong> is now <strong>${daysOverdue} days overdue</strong>.</p>
           
           <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin: 0 0 10px 0; color: #d97706;">Invoice Details</h3>
             <table style="width: 100%;">
               <tr><td>Invoice Number:</td><td><strong>#${invoice.invoice.number}</strong></td></tr>
-              <tr><td>Amount Due:</td><td><strong>$${this.formatCurrency(total)}</strong></td></tr>
+              <tr><td>Amount Due:</td><td><strong>${money(total)}</strong></td></tr>
               <tr><td>Due Date:</td><td>${invoice.invoice.dueDate}</td></tr>
               <tr><td>Days Overdue:</td><td><strong>${daysOverdue} days</strong></td></tr>
             </table>
@@ -435,11 +440,11 @@ Payment Reminder
 
 Hi ${customer.name || customer.company},
 
-This is a friendly reminder that Invoice #${invoice.invoice.number} for $${total.toFixed(2)} is now ${daysOverdue} days overdue.
+This is a friendly reminder that Invoice #${invoice.invoice.number} for ${money(total)} is now ${daysOverdue} days overdue.
 
 Invoice Details:
 - Invoice Number: #${invoice.invoice.number}
-- Amount Due: $${total.toFixed(2)}
+- Amount Due: ${money(total)}
 - Due Date: ${invoice.invoice.dueDate}
 - Days Overdue: ${daysOverdue} days
 
@@ -452,23 +457,24 @@ ${business.name}
     `.trim();
   }
 
-  // Calculate invoice total
+  // Calculate invoice total -- shared with the screen and the PDF.
   calculateTotal(invoice) {
-    const subtotal = invoice.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
-    const tax = subtotal * (invoice.tax / 100);
-    const discount = subtotal * (invoice.discount / 100);
-    return subtotal + tax - discount;
+    return invoiceTotal(invoice);
   }
 
-  // Prepare PDF attachment
+  /**
+   * Render the invoice to a base64 PDF for the Emailit `attachments` array.
+   *
+   * The customer now receives the same vector document the Download button
+   * produces; this used to return the literal string 'base64_encoded_pdf_content'.
+   */
   async preparePDFAttachment(invoice) {
-    // This would integrate with your existing PDF generation
-    // For now, returning a placeholder
-    return {
-      filename: `invoice-${invoice.invoice.number}.pdf`,
-      content: 'base64_encoded_pdf_content',
-      type: 'application/pdf'
-    };
+    // `datauristring` is 'data:application/pdf;filename=...;base64,<payload>' --
+    // Emailit wants the payload on its own.
+    // Imported on demand: jsPDF is large, and most email paths never attach a PDF.
+    const { buildInvoicePdf } = await import('../lib/invoicePdf');
+    const dataUri = buildInvoicePdf(invoice).output('datauristring');
+    return dataUri.slice(dataUri.indexOf(',') + 1);
   }
 
   // Log email to database (will integrate with the email_log table)
