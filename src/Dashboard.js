@@ -25,7 +25,7 @@ import PaymentHistory from './PaymentHistory';
 import PurchaseOrders from './PurchaseOrders';
 import ResponsiveWrapper, { ResponsiveGrid, ResponsiveCard, ResponsiveButton, ResponsiveHeading } from './components/ResponsiveWrapper';
 
-const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onCreateInvoiceForCustomer, currentBusiness, customers = [] }) => {
+const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onCreateInvoiceForCustomer, currentBusiness, customers = [], userId }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [invoices, setInvoices] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -137,8 +137,9 @@ const Dashboard = ({ onNavigate, savedInvoices, onEditInvoice, onCreateInvoiceFo
     setInvoices(updatedInvoices);
     calculateStats(updatedInvoices);
     
-    // Save to localStorage
-    localStorage.setItem('savedInvoices', JSON.stringify(updatedInvoices));
+    if (userId) {
+      localStorage.setItem(`savedInvoices:${userId}`, JSON.stringify(updatedInvoices));
+    }
   };
 
   const getStatusColor = (status) => {

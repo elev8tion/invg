@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Building, ChevronDown, Plus, Check, Settings, AlertCircle } from 'lucide-react';
 import { businessService } from './lib/db';
 
-const BusinessSwitcher = ({ currentBusiness, onBusinessChange, onCreateBusiness, onEditBusiness }) => {
+const BusinessSwitcher = ({ userId, currentBusiness, onBusinessChange, onCreateBusiness, onEditBusiness }) => {
   const [businesses, setBusinesses] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -14,17 +14,20 @@ const BusinessSwitcher = ({ currentBusiness, onBusinessChange, onCreateBusiness,
       setLoading(true);
       console.log('BusinessSwitcher: Loading businesses...');
       
-      // Get all businesses for now (in production, filter by user)
-      const allBusinesses = await businessService.getAllBusinesses();
-      console.log('BusinessSwitcher: Loaded businesses:', allBusinesses);
-      
-      if (allBusinesses && allBusinesses.length > 0) {
-        setBusinesses(allBusinesses);
-        
-        // Set first business as current if none selected
+      if (!userId) {
+        setBusinesses([]);
+        return;
+      }
+
+      const mine = await businessService.getUserBusinesses(userId);
+      const active = (mine || []).filter((b) => Number(b.is_active) !== 0);
+      console.log('BusinessSwitcher: Loaded businesses:', active);
+
+      if (active.length > 0) {
+        setBusinesses(active);
         if (!currentBusiness) {
-          console.log('BusinessSwitcher: Setting first business as current:', allBusinesses[0]);
-          onBusinessChange(allBusinesses[0]);
+          console.log('BusinessSwitcher: Setting first business as current:', active[0]);
+          onBusinessChange(active[0]);
         }
       } else {
         console.log('BusinessSwitcher: No businesses found');
@@ -39,7 +42,13 @@ const BusinessSwitcher = ({ currentBusiness, onBusinessChange, onCreateBusiness,
       console.log('BusinessSwitcher: Setting loading to false');
       setLoading(false);
     }
-  }, [currentBusiness, onBusinessChange]);
+  }, [userId, currentBusiness, onBusinessChange]);
+
+  useEffect(() => {
+    if (currentBusiness?.id && !businesses.some((b) => b.id === currentBusiness.id)) {
+      setBusinesses((prev) => [...prev, currentBusiness]);
+    }
+  }, [currentBusiness, businesses]);
 
   useEffect(() => {
     console.log('BusinessSwitcher: Component mounted, loading businesses...');

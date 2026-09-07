@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Building } from 'lucide-react';
-import { businessService, userService } from './lib/db';
+import { businessService } from './lib/db';
 import PaymentTermsField, { isCustomValue, validateTerms } from './components/PaymentTermsField';
 
-const BusinessModal = ({ business, onSave, onClose }) => {
+const BusinessModal = ({ business, currentUserId, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -108,33 +108,9 @@ const BusinessModal = ({ business, onSave, onClose }) => {
           created_at: new Date().toISOString()
         };
         const created = await businessService.createBusiness(businessData);
-        
-        // Auto-create user for the business since we're bypassing auth
-        try {
-          // Check if user already exists with this email
-          const existingUser = await userService.getUserByEmail(businessData.email);
-          
-          if (!existingUser) {
-            // Create new user
-            const userData = {
-              email: businessData.email,
-              name: businessData.name,
-              business_id: created.id,
-              role: 'owner',
-              is_active: true,
-              created_at: new Date().toISOString()
-            };
-            
-            await userService.createUser(userData);
-            console.log('Auto-created user for business:', businessData.email);
-          } else {
-            console.log('User already exists:', businessData.email);
-          }
-        } catch (userError) {
-          console.error('Error creating user for business:', userError);
-          // Don't throw error here - business creation should still succeed
+        if (currentUserId) {
+          await businessService.linkUser(created.id, currentUserId, 'owner');
         }
-        
         onSave(created);
       }
     } catch (error) {

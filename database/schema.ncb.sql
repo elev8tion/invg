@@ -56,6 +56,7 @@ CREATE TABLE users (
     email      VARCHAR(255) NOT NULL UNIQUE,
     full_name  VARCHAR(255),
     role       VARCHAR(50)  DEFAULT 'user',   -- admin, manager, user
+    pin_code   CHAR(4) UNIQUE,                -- live table is app_users; 4-digit unlock PIN
     is_active  TINYINT(1)   DEFAULT 1,
     created_at DATETIME     DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

@@ -14,13 +14,17 @@ import FeedbackCommandCenter from './FeedbackCommandCenter';
 import CustomerPage from './CustomerPage';
 import BusinessSwitcher from './BusinessSwitcher';
 import BusinessModal from './BusinessModal';
+import PinLock from './PinLock';
+import ChangePin from './ChangePin';
+import PeopleAdmin from './PeopleAdmin';
 import PaymentTermsField from './components/PaymentTermsField';
-import { paymentService } from './lib/db';
+import { paymentService, userService } from './lib/db';
+import { clearSession, loadInvoices, publicUser, readSession, saveInvoices } from './lib/session';
 import useCustomers from './hooks/useCustomers';
 import DevTools from './components/DevTools';
 import './utils/cacheBuster'; // Import for side effects (keyboard shortcuts)
 
-const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSavedInvoices, editingInvoice, setEditingInvoice, customers, currentBusiness, onCustomersChanged }) => {
+const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSavedInvoices, editingInvoice, setEditingInvoice, customers, currentBusiness, onCustomersChanged, userId }) => {
   const [isListening, setIsListening] = useState(false);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [showCustomerManagement, setShowCustomerManagement] = useState(false);
@@ -193,7 +197,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
     
     const updated = [...savedInvoices, newInvoice];
     setSavedInvoices(updated);
-    localStorage.setItem('savedInvoices', JSON.stringify(updated));
+    saveInvoices(userId, updated);
     alert('Invoice saved successfully!');
     clearInvoice();
   };
@@ -316,7 +320,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
         return inv;
       });
       setSavedInvoices(updatedInvoices);
-      localStorage.setItem('savedInvoices', JSON.stringify(updatedInvoices));
+      saveInvoices(userId, updatedInvoices);
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
       
@@ -332,7 +336,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
         return inv;
       });
       setSavedInvoices(updatedInvoices);
-      localStorage.setItem('savedInvoices', JSON.stringify(updatedInvoices));
+      saveInvoices(userId, updatedInvoices);
     }
   };
 
@@ -429,7 +433,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
                         if (window.confirm(`Are you sure you want to delete Invoice #${invoice.invoice.number}?`)) {
                           const updatedInvoices = savedInvoices.filter(inv => inv.id !== invoice.id);
                           setSavedInvoices(updatedInvoices);
-                          localStorage.setItem('invoices', JSON.stringify(updatedInvoices));
+                          saveInvoices(userId, updatedInvoices);
                         }
                       }}
                       className="p-2 bg-red-500 rounded-xl hover:bg-red-600 transition-colors"
@@ -1092,15 +1096,37 @@ function App() {
   const [currentBusiness, setCurrentBusiness] = useState(null);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [sessionReady, setSessionReady] = useState(false);
+  const [showChangePin, setShowChangePin] = useState(false);
+  const [showPeople, setShowPeople] = useState(false);
 
   useEffect(() => {
-    // Load saved invoices from localStorage
-    const saved = localStorage.getItem('savedInvoices');
-    if (saved) {
-      setSavedInvoices(JSON.parse(saved));
-    }
-    
+    let cancelled = false;
+    (async () => {
+      const session = readSession();
+      if (session?.userId) {
+        try {
+          const user = await userService.getUser(session.userId);
+          if (!cancelled && user && Number(user.is_active) === 1) {
+            setCurrentUser(publicUser(user));
+            setSavedInvoices(loadInvoices(user.id));
+          } else if (!cancelled) {
+            clearSession();
+          }
+        } catch (err) {
+          console.error('Session restore failed:', err);
+          clearSession();
+        }
+      }
+      if (!cancelled) setSessionReady(true);
+    })();
+    return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (currentUser?.id) saveInvoices(currentUser.id, savedInvoices);
+  }, [currentUser?.id, savedInvoices]);
 
   const handleNavigate = (view) => {
     setCurrentView(view);
@@ -1113,13 +1139,34 @@ function App() {
   const handleDeleteInvoice = (invoiceId) => {
     const updated = savedInvoices.filter(inv => inv.id !== invoiceId);
     setSavedInvoices(updated);
-    localStorage.setItem('savedInvoices', JSON.stringify(updated));
+    saveInvoices(currentUser?.id, updated);
   };
 
   const handleSaveInvoice = (invoice) => {
     const updated = [...savedInvoices, invoice];
     setSavedInvoices(updated);
-    localStorage.setItem('savedInvoices', JSON.stringify(updated));
+    saveInvoices(currentUser?.id, updated);
+  };
+
+  const handleUnlock = (user) => {
+    setCurrentUser(user);
+    setCurrentBusiness(null);
+    setCurrentBusinessId(null);
+    setCurrentView('dashboard');
+    setSavedInvoices(loadInvoices(user.id));
+    setShowChangePin(false);
+    setShowPeople(false);
+  };
+
+  const handleLogout = () => {
+    clearSession();
+    setCurrentUser(null);
+    setCurrentBusiness(null);
+    setCurrentBusinessId(null);
+    setSavedInvoices([]);
+    setCurrentView('dashboard');
+    setShowChangePin(false);
+    setShowPeople(false);
   };
 
   const handleCreateInvoiceForCustomer = (customer) => {
@@ -1201,6 +1248,29 @@ function App() {
     // This will happen automatically when BusinessSwitcher re-renders
   };
 
+  const accountOverlays = currentUser && (
+    <>
+      {showChangePin && (
+        <ChangePin userId={currentUser.id} onClose={() => setShowChangePin(false)} />
+      )}
+      {showPeople && currentUser.role === 'admin' && (
+        <PeopleAdmin currentUserId={currentUser.id} onClose={() => setShowPeople(false)} />
+      )}
+    </>
+  );
+
+  if (!sessionReady) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <PinLock onUnlock={handleUnlock} />;
+  }
+
   // Clean consistent background - no gradients
   const getBusinessTheme = () => {
     // Simple dark background for all businesses - clean and readable
@@ -1214,18 +1284,43 @@ function App() {
           <div className="p-4 bg-gray-800/50 backdrop-blur border-b border-gray-700">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
               <BusinessSwitcher 
+                userId={currentUser.id}
                 currentBusiness={currentBusiness}
                 onBusinessChange={handleBusinessChange}
                 onCreateBusiness={handleCreateBusiness}
                 onEditBusiness={handleEditBusiness}
               />
-              <div className="text-sm text-gray-400">
+              <div className="flex items-center gap-3 text-sm text-gray-400">
                 {currentBusiness && (
                   <span className="flex items-center gap-2">
                     <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                     Active: {currentBusiness.name}
                   </span>
                 )}
+                <span className="text-gray-300">{currentUser.full_name || 'Account'}</span>
+                <button
+                  type="button"
+                  onClick={() => setShowChangePin(true)}
+                  className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 text-gray-200"
+                >
+                  Change PIN
+                </button>
+                {currentUser.role === 'admin' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPeople(true)}
+                    className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 text-gray-200"
+                  >
+                    People
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 text-gray-200"
+                >
+                  Logout
+                </button>
               </div>
             </div>
           </div>
@@ -1237,15 +1332,18 @@ function App() {
             onDeleteInvoice={handleDeleteInvoice}
             onCreateInvoiceForCustomer={handleCreateInvoiceForCustomer}
             currentBusiness={currentBusiness}
+            userId={currentUser.id}
           />
         </div>
         {showBusinessModal && (
           <BusinessModal 
             business={editingBusiness}
+            currentUserId={currentUser.id}
             onSave={handleSaveBusiness}
             onClose={() => setShowBusinessModal(false)}
           />
         )}
+        {accountOverlays}
         <FeedbackCommandCenter />
         
         {/* Development Tools - Only shown in development mode */}
@@ -1259,9 +1357,11 @@ function App() {
       <>
         <CustomerPage
           businessId={currentBusiness?.id}
+          userId={currentUser.id}
           onNavigate={handleNavigate}
           onCreateInvoiceForCustomer={handleCreateInvoiceForCustomer}
         />
+        {accountOverlays}
         <FeedbackCommandCenter />
       </>
     );
@@ -1279,7 +1379,9 @@ function App() {
         setEditingInvoice={setEditingInvoice}
         customers={customers}
         currentBusiness={currentBusiness}
+        userId={currentUser.id}
       />
+      {accountOverlays}
       <FeedbackCommandCenter />
     </>
   );

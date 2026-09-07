@@ -27,7 +27,7 @@ async function findOrCreate(table, matchFilters, record, label) {
 const user = await findOrCreate(
   'app_users',
   { email: 'admin@example.com' },
-  { email: 'admin@example.com', full_name: 'Admin User', role: 'admin', is_active: 1 },
+  { email: 'admin@example.com', full_name: 'Admin User', role: 'admin', is_active: 1, pin_code: '1234' },
   'user admin@example.com'
 );
 

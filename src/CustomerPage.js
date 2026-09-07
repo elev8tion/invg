@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import useCustomers from './hooks/useCustomers';
 
-const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer, businessId }) => {
+const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer, businessId, userId }) => {
   const { customers, loading, error, addCustomer, updateCustomer, deleteCustomer } =
     useCustomers(businessId);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -37,7 +37,9 @@ const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer, businessId }) =>
 
   const calculateStats = (customerList) => {
     // Get saved invoices to calculate revenue per customer
-    const savedInvoices = localStorage.getItem('savedInvoices');
+    const savedInvoices = userId
+      ? localStorage.getItem(`savedInvoices:${userId}`)
+      : null;
     const invoices = savedInvoices ? JSON.parse(savedInvoices) : [];
     
     let activeCount = 0;
@@ -144,7 +146,9 @@ const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer, businessId }) =>
   );
 
   const getCustomerInvoices = (customer) => {
-    const savedInvoices = localStorage.getItem('savedInvoices');
+    const savedInvoices = userId
+      ? localStorage.getItem(`savedInvoices:${userId}`)
+      : null;
     const invoices = savedInvoices ? JSON.parse(savedInvoices) : [];
     return invoices.filter(inv => inv.client?.name === customer.name);
   };

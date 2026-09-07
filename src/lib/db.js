@@ -12,6 +12,7 @@
  */
 
 import ncb from './ncbClient';
+import { isValidPin, normalizePin } from './pin';
 
 const TRUE = 1;
 const FALSE = 0;
@@ -80,6 +81,20 @@ export const businessService = {
 
   async createBusiness(business) {
     return ncb.createAndFetch('businesses', business);
+  },
+
+  async linkUser(businessId, userId, role = 'owner') {
+    const existing = await ncb.search('business_users', {
+      business_id: businessId,
+      user_id: userId,
+    });
+    if (existing[0]) return existing[0];
+    return ncb.createAndFetch('business_users', {
+      business_id: businessId,
+      user_id: userId,
+      role,
+      is_default: TRUE,
+    });
   },
 
   async updateBusiness(businessId, updates) {
@@ -527,10 +542,65 @@ export const userService = {
     return ncb.createAndFetch('app_users', userData);
   },
 
+  async getUser(userId) {
+    return ncb.readOne('app_users', userId);
+  },
+
   /** Returns null when no user matches, mirroring the old PGRST116 handling. */
   async getUserByEmail(email) {
     const matches = await ncb.search('app_users', { email });
     return matches[0] || null;
+  },
+
+  async getUserByPin(pin) {
+    const code = normalizePin(pin);
+    if (!isValidPin(code)) return null;
+    const matches = await ncb.search('app_users', { pin_code: code });
+    return matches[0] || null;
+  },
+
+  async listUsers() {
+    const users = await ncb.readAll('app_users');
+    return users.sort(byName('full_name'));
+  },
+
+  async createPinUser({ full_name, pin_code, role = 'user' }) {
+    const pin = normalizePin(pin_code);
+    if (!isValidPin(pin)) throw new Error('PIN must be 4 digits');
+    const name = String(full_name || '').trim();
+    if (!name) throw new Error('Name is required');
+    const taken = await this.getUserByPin(pin);
+    if (taken) throw new Error('That PIN is already in use');
+    return this.createUser({
+      email: `pin-${pin}@invg.local`,
+      full_name: name,
+      role,
+      is_active: TRUE,
+      pin_code: pin,
+    });
+  },
+
+  async changePin(userId, currentPin, nextPin) {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error('Account not found');
+    if (normalizePin(user.pin_code) !== normalizePin(currentPin)) {
+      throw new Error('Current PIN is incorrect');
+    }
+    return this.resetPin(userId, nextPin, userId);
+  },
+
+  async resetPin(userId, nextPin, ignoreUserId = null) {
+    const pin = normalizePin(nextPin);
+    if (!isValidPin(pin)) throw new Error('PIN must be 4 digits');
+    const taken = await this.getUserByPin(pin);
+    if (taken && Number(taken.id) !== Number(ignoreUserId ?? userId)) {
+      throw new Error('That PIN is already in use');
+    }
+    return this.updateUser(userId, { pin_code: pin });
+  },
+
+  async setActive(userId, isActive) {
+    return this.updateUser(userId, { is_active: isActive ? TRUE : FALSE });
   },
 
   async updateUser(userId, updates) {
