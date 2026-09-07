@@ -252,11 +252,6 @@
     padding: var(--space-sm);
     justify-content: space-around;
   }
-  
-  /* Adjust main content to account for fixed nav */
-  body {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom));
-  }
 }
 
 /* ========================================
@@ -359,10 +354,10 @@
    15. ACCESSIBILITY ENHANCEMENTS
    ======================================== */
 
-/* Ensure tap targets are large enough */
-a, button, input, select, textarea, [role="button"], [tabindex]:not([tabindex="-1"]) {
+/* Ensure primary touch targets are comfortable */
+.btn-responsive,
+.touch-target {
   min-height: 44px;
-  min-width: 44px;
 }
 
 /* Focus visible for keyboard navigation */

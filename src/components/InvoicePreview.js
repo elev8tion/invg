@@ -29,7 +29,7 @@ const InvoicePreview = ({ invoice }) => {
   ].filter(([, value]) => value);
 
   return (
-    <div id="invoice-preview" className="bg-white text-black rounded-2xl p-8 shadow-xl h-fit">
+    <div id="invoice-preview" className="bg-white text-black rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl h-fit overflow-hidden">
       {/* Header: company block left, invoice metadata right */}
       <div className="flex justify-between items-start gap-6">
         <div className="min-w-0">
@@ -76,7 +76,8 @@ const InvoicePreview = ({ invoice }) => {
       </div>
 
       {/* Line items */}
-      <table className="w-full text-sm">
+      <div className="overflow-x-auto -mx-2 px-2 my-2">
+        <table className="w-full text-sm min-w-[480px] sm:min-w-0">
         <thead>
           <tr className="bg-gray-100 text-xs font-bold text-gray-800 tracking-wider">
             <th className="text-left py-2 px-2 w-[42%]">DESCRIPTION</th>
@@ -98,6 +99,7 @@ const InvoicePreview = ({ invoice }) => {
           ))}
         </tbody>
       </table>
+      </div>
 
       {/* Totals */}
       <div className="flex justify-end mt-6">

@@ -1,535 +1,88 @@
-/* Mobile-First Override Styles for Invoice Generator */
-/* These styles ensure perfect responsiveness on all devices */
+/* Mobile & Responsive UX Enhancements */
+/* Scoped, non-destructive mobile optimizations following native design principles */
 
 /* ========================================
-   MOBILE BREAKPOINTS
+   1. TOUCH & VIEWPORT ESSENTIALS
    ======================================== */
 
-/* iPhone SE and smaller (320px - 375px) */
-@media (max-width: 375px) {
-  /* Reduce padding on very small screens */
-  .min-h-screen {
-    padding: 0.5rem;
-  }
-  
-  /* Stack all grid items vertically */
-  [class*="grid-cols"] {
-    grid-template-columns: 1fr !important;
-  }
-  
-  /* Full-width buttons */
-  button {
-    width: 100%;
-    margin-bottom: 0.5rem;
-  }
-  
-  /* Smaller font sizes */
-  .text-4xl {
-    font-size: 1.5rem !important;
-  }
-  
-  .text-3xl {
-    font-size: 1.25rem !important;
-  }
-  
-  .text-2xl {
-    font-size: 1.125rem !important;
-  }
-}
-
-/* Standard Mobile (376px - 640px) */
-@media (max-width: 640px) {
-  /* Navigation adjustments */
-  .flex.items-center.justify-between {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
-  
-  /* Invoice form adjustments */
-  .invoice-form input,
-  .invoice-form select,
-  .invoice-form textarea {
-    width: 100%;
-    font-size: 16px; /* Prevents zoom on iOS */
-  }
-  
-  /* Data tables scroll sideways. Scoped to the data-table wrappers: as a bare
-     `table` rule the `white-space: nowrap` stopped invoice line-item
-     descriptions from ever wrapping, so the document ran off its own sheet. */
-  .overflow-x-auto table,
-  .table-responsive table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-  
-  /* Card stacking */
-  .grid.grid-cols-3,
-  .grid.grid-cols-4 {
-    grid-template-columns: 1fr !important;
-    gap: 1rem;
-  }
-  
-  /* Modal full screen on mobile */
-  .fixed.inset-0 > div {
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    border-radius: 0;
-    margin: 0;
-  }
-  
-  /* Business switcher dropdown */
-  .relative > .absolute {
-    width: 100%;
-    left: 0;
-    right: 0;
-  }
-  
-  /* Stats cards stacking */
-  .md\:grid-cols-4 {
-    grid-template-columns: 1fr !important;
-  }
-  
-  /* Hide desktop-only elements */
-  .hidden-mobile {
-    display: none !important;
-  }
-  
-  /* Invoice preview adjustments */
-  #invoice-preview {
-    padding: 1rem;
-    font-size: 14px;
-  }
-  
-  /* Action buttons group */
-  .flex.gap-4 {
-    flex-direction: column;
-    width: 100%;
-  }
-  
-  .flex.gap-4 > button {
-    width: 100%;
-  }
-}
-
-/* Tablet (641px - 768px) */
-@media (min-width: 641px) and (max-width: 768px) {
-  /* Two column layout for tablets */
-  .grid.grid-cols-3,
-  .grid.grid-cols-4 {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-  
-  /* Side-by-side buttons */
-  .flex.gap-4 {
-    flex-wrap: wrap;
-  }
-  
-  .flex.gap-4 > button {
-    flex: 1;
-    min-width: calc(50% - 0.5rem);
-  }
-}
-
-/* ========================================
-   INVOICE SPECIFIC RESPONSIVE STYLES
-   ======================================== */
-
-/* Invoice Header */
-@media (max-width: 640px) {
-  .invoice-header {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .invoice-header img {
-    max-width: 150px;
-    margin: 0 auto;
-  }
-  
-  .invoice-header .company-info,
-  .invoice-header .client-info {
-    width: 100%;
-    text-align: left;
-    margin-top: 1rem;
-  }
-}
-
-/* Invoice Items Table */
-@media (max-width: 640px) {
-  .invoice-items-container {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .invoice-items-table {
-    min-width: 500px;
-  }
-  
-  /* Alternative: Card layout for items */
-  .invoice-item-card {
-    background: rgba(55, 65, 81, 0.5);
-    padding: 1rem;
-    border-radius: 0.5rem;
-    margin-bottom: 1rem;
-  }
-  
-  .invoice-item-card .item-description {
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-  }
-  
-  .invoice-item-card .item-details {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.875rem;
-    color: rgba(156, 163, 175, 1);
-  }
-}
-
-/* ========================================
-   DASHBOARD RESPONSIVE
-   ======================================== */
-
+/* Prevent automatic zoom on input focus in iOS Safari */
 @media (max-width: 768px) {
-  /* Dashboard tabs */
-  .dashboard-tabs {
-    display: flex;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  
-  .dashboard-tabs::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .dashboard-tab {
-    flex-shrink: 0;
-    padding: 0.75rem 1rem;
-    white-space: nowrap;
-  }
-  
-  /* Pipeline view becomes vertical */
-  .pipeline-columns {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .pipeline-column {
-    width: 100%;
-  }
-}
-
-/* ========================================
-   FORMS RESPONSIVE
-   ======================================== */
-
-@media (max-width: 640px) {
-  /* Form groups stack vertically */
-  .form-group-horizontal {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  /* Date inputs side by side on mobile */
-  .date-inputs {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-  }
-  
-  /* Full width inputs */
   input[type="text"],
   input[type="email"],
+  input[type="password"],
   input[type="number"],
+  input[type="tel"],
   input[type="date"],
   select,
   textarea {
-    width: 100%;
-    min-height: 44px; /* Touch target */
-    font-size: 16px; /* Prevent zoom */
-  }
-  
-  /* Larger touch targets for buttons */
-  button {
-    min-height: 44px;
-    padding: 0.75rem 1rem;
+    font-size: 16px !important;
   }
 }
 
+/* Ensure smooth touch scrolling */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Horizontal scrollable containers with hidden scrollbars for native feel */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* ========================================
-   CUSTOMER MANAGEMENT RESPONSIVE
+   2. ACCESSIBILITY & TOUCH TARGETS
    ======================================== */
+
+/* Touch-friendly interactive targets (Apple HIG 44x44pt recommendation) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Safe area insets for notched phones & dynamic island */
+.safe-top {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.safe-x {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+/* ========================================
+   3. INVOICE PREVIEW ON MOBILE
+   ======================================== */
+
+/* Prevent preview from bursting container */
+#invoice-preview {
+  max-width: 100%;
+}
 
 @media (max-width: 640px) {
-  /* Customer cards instead of table */
-  .customer-table-mobile {
-    display: none;
-  }
-  
-  .customer-cards {
-    display: block;
-  }
-  
-  .customer-card {
-    background: rgba(55, 65, 81, 0.5);
-    padding: 1rem;
-    border-radius: 0.75rem;
-    margin-bottom: 1rem;
-  }
-  
-  .customer-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-  
-  .customer-card-name {
-    font-weight: 600;
-    font-size: 1.125rem;
-  }
-  
-  .customer-card-details {
-    font-size: 0.875rem;
-    color: rgba(156, 163, 175, 1);
-    line-height: 1.5;
-  }
-  
-  .customer-card-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
-  }
-  
-  .customer-card-actions button {
-    flex: 1;
-    padding: 0.5rem;
-    font-size: 0.875rem;
-  }
-}
-
-/* ========================================
-   PAYMENT HISTORY RESPONSIVE
-   ======================================== */
-
-@media (max-width: 768px) {
-  /* Payment stats cards */
-  .payment-stats {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  /* Payment table to cards */
-  .payment-row {
-    display: block;
-    background: rgba(55, 65, 81, 0.5);
-    padding: 1rem;
-    border-radius: 0.5rem;
-    margin-bottom: 1rem;
-  }
-  
-  .payment-row td {
-    display: block;
-    padding: 0.25rem 0;
-  }
-  
-  .payment-row td:before {
-    content: attr(data-label);
-    font-weight: 600;
-    display: inline-block;
-    width: 120px;
-    color: rgba(156, 163, 175, 1);
-  }
-}
-
-/* ========================================
-   FLOATING ACTION BUTTON (Mobile)
-   ======================================== */
-
-@media (max-width: 640px) {
-  .fab-create-invoice {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #a855f7, #ec4899);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
-    z-index: 1000;
-  }
-  
-  .fab-create-invoice:active {
-    transform: scale(0.95);
-  }
-}
-
-/* ========================================
-   LANDSCAPE MODE OPTIMIZATIONS
-   ======================================== */
-
-@media (max-height: 500px) and (orientation: landscape) {
-  /* Reduce vertical spacing */
-  .p-6 {
-    padding: 1rem;
-  }
-  
-  .mb-8 {
-    margin-bottom: 1rem;
-  }
-  
-  /* Compact header */
-  .text-4xl {
-    font-size: 1.5rem;
-  }
-  
-  /* Side-by-side layout for better use of space */
-  .landscape-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-}
-
-/* ========================================
-   PRINT STYLES
-   ======================================== */
-
-@media print {
-  /* Print the invoice document and nothing else.
-     
-     This block used to do two harmful things. `* { background: white; color:
-     black }` flattened the whole document -- the purple total, the red discount
-     row and the grey column header all printed as plain black on white -- and
-     `page-break-inside: avoid` on #invoice-preview asked the browser to keep the
-     entire invoice on one sheet, so anything longer than a page was clipped
-     instead of flowing onto the next one.
-     
-     The rules are scoped to the invoice now, and they mirror how
-     src/lib/invoicePdf.js paginates: never break through a row, repeat the
-     column header on each sheet. */
-
-  @page {
-    size: A4;
-    margin: 15mm;
-  }
-
-  /* Everything on the page is hidden, then the invoice alone is shown and
-     lifted to the top -- the app shell, nav and editor form never print. */
-  body * {
-    visibility: hidden !important;
-  }
-
-  #invoice-preview,
-  #invoice-preview * {
-    visibility: visible !important;
-  }
-
-  /* Every declaration here is !important on purpose. A printed A4 page is about
-     700 CSS px wide, so the `max-width: 768px` and `max-width: 1024px` mobile
-     blocks in the other stylesheets all match while printing, and several of
-     them are themselves !important. Without this the invoice inherits mobile
-     sizing and clipping on paper. */
   #invoice-preview {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    max-height: none !important;
-    overflow: visible !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    font-size: 10pt !important;
-
-    /* Keep the accent colours the screen and the PDF both use. */
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    font-size: 13px;
   }
-
-  /* The app shell is a full-height dark column; left alone it contributes a
-     blank first sheet before the absolutely-positioned invoice. */
-  html,
-  body,
-  #root {
-    height: auto !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-    overflow: visible !important;
-  }
-
-  /* Let a long invoice flow across sheets, but never split a line item. */
-  #invoice-preview tr,
-  #invoice-preview th,
-  #invoice-preview td {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  /* Repeat the column header on every printed page, as the PDF does. */
-  #invoice-preview thead {
-    display: table-header-group;
-  }
-
 }
 
 /* ========================================
-   ACCESSIBILITY IMPROVEMENTS
+   4. DATA TABLES MOBILE SCROLL
    ======================================== */
 
-/* Focus indicators for keyboard navigation */
-@media (min-width: 641px) {
-  :focus-visible {
-    outline: 2px solid #a855f7;
-    outline-offset: 2px;
-  }
+.data-table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Touch-friendly tap targets */
-@media (pointer: coarse) {
-  button,
-  a,
-  input,
-  select,
-  textarea {
-    min-height: 44px;
-    min-width: 44px;
-  }
-}
-
-/* High contrast mode */
-@media (prefers-contrast: high) {
-  .border {
-    border-width: 2px !important;
-  }
-  
-  button {
-    border: 2px solid currentColor !important;
-  }
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+.data-table-container table {
+  min-width: 600px;
 }

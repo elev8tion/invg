@@ -170,63 +170,66 @@ const PaymentHistory = ({ businessId }) => {
   }
 
   return (
-    <div className="bg-gray-800 rounded-xl p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-white">Payment History</h2>
+    <div className="bg-gray-800 rounded-2xl p-4 sm:p-6 border border-gray-700/80 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+        <div>
+          <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">Payment History</h2>
+          <p className="text-gray-400 text-xs sm:text-sm mt-0.5">Track payments and receivables</p>
+        </div>
         <button
           onClick={handleExportCSV}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+          className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-xl transition-colors shadow-sm text-sm"
         >
           <Download size={18} />
-          Export
+          Export CSV
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-gray-700 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-green-400 mb-2">
-            <DollarSign size={20} />
-            <span className="text-sm">Received</span>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
+        <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600/40">
+          <div className="flex items-center gap-2 text-green-400 mb-1.5">
+            <DollarSign size={18} />
+            <span className="text-xs sm:text-sm font-medium">Received</span>
           </div>
-          <p className="text-2xl font-bold text-white">
+          <p className="text-xl sm:text-2xl font-bold text-white font-mono tabular-nums">
             {money(totalReceived)}
           </p>
         </div>
-        <div className="bg-gray-700 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-yellow-400 mb-2">
-            <Clock size={20} />
-            <span className="text-sm">Pending</span>
+        <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600/40">
+          <div className="flex items-center gap-2 text-yellow-400 mb-1.5">
+            <Clock size={18} />
+            <span className="text-xs sm:text-sm font-medium">Pending</span>
           </div>
-          <p className="text-2xl font-bold text-white">
+          <p className="text-xl sm:text-2xl font-bold text-white font-mono tabular-nums">
             {money(totalPending)}
           </p>
         </div>
-        <div className="bg-gray-700 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-red-400 mb-2">
-            <AlertCircle size={20} />
-            <span className="text-sm">Overdue</span>
+        <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600/40">
+          <div className="flex items-center gap-2 text-red-400 mb-1.5">
+            <AlertCircle size={18} />
+            <span className="text-xs sm:text-sm font-medium">Overdue</span>
           </div>
-          <p className="text-2xl font-bold text-white">
+          <p className="text-xl sm:text-2xl font-bold text-white font-mono tabular-nums">
             {money(totalOverdue)}
           </p>
         </div>
       </div>
 
-      <div className="flex gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
             placeholder="Search by customer or invoice..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+            className="w-full pl-9 pr-4 py-2.5 bg-gray-700/70 border border-gray-600/60 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 text-sm min-h-[44px]"
           />
         </div>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+          className="px-4 py-2.5 bg-gray-700/70 border border-gray-600/60 rounded-xl text-white focus:outline-none focus:border-purple-500 text-sm min-h-[44px]"
         >
           <option value="all">All Payments</option>
           <option value="completed">Completed</option>
@@ -235,49 +238,49 @@ const PaymentHistory = ({ businessId }) => {
         </select>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
+      <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+        <table className="w-full min-w-[640px]">
           <thead>
-            <tr className="text-left text-gray-400 text-sm">
-              <th className="pb-3">Invoice</th>
-              <th className="pb-3">Customer</th>
-              <th className="pb-3">Amount</th>
-              <th className="pb-3">Date</th>
-              <th className="pb-3">Method</th>
-              <th className="pb-3">Status</th>
+            <tr className="text-left text-gray-400 text-xs sm:text-sm border-b border-gray-700/80">
+              <th className="pb-3 pr-4">Invoice</th>
+              <th className="pb-3 pr-4">Customer</th>
+              <th className="pb-3 pr-4">Amount</th>
+              <th className="pb-3 pr-4">Date</th>
+              <th className="pb-3 pr-4">Method</th>
+              <th className="pb-3 pr-4">Status</th>
               <th className="pb-3">Reference</th>
             </tr>
           </thead>
-          <tbody className="text-white">
+          <tbody className="text-white text-sm divide-y divide-gray-700/50">
             {filteredPayments.map((payment) => (
-              <tr key={payment.id} className="border-t border-gray-700">
-                <td className="py-3">
-                  <span className="font-mono text-sm">{payment.invoice_number}</span>
+              <tr key={payment.id} className="hover:bg-gray-700/30 transition-colors">
+                <td className="py-3 pr-4">
+                  <span className="font-mono text-xs sm:text-sm text-purple-400 font-semibold">{payment.invoice_number}</span>
                 </td>
-                <td className="py-3">{payment.customer_name}</td>
-                <td className="py-3 font-semibold">{money(payment.amount)}</td>
-                <td className="py-3">
-                  <div className="flex items-center gap-1">
+                <td className="py-3 pr-4 font-medium text-gray-200">{payment.customer_name}</td>
+                <td className="py-3 pr-4 font-mono tabular-nums font-semibold text-gray-100">{money(payment.amount)}</td>
+                <td className="py-3 pr-4">
+                  <div className="flex items-center gap-1.5 text-gray-300">
                     <Calendar size={14} className="text-gray-400" />
-                    <span className="text-sm">
+                    <span className="text-xs sm:text-sm">
                       {payment.payment_date || payment.due_date}
                     </span>
                   </div>
                 </td>
-                <td className="py-3">
-                  <span className="text-sm text-gray-300">
+                <td className="py-3 pr-4">
+                  <span className="text-xs sm:text-sm text-gray-300">
                     {payment.payment_method || '-'}
                   </span>
                 </td>
-                <td className="py-3">
-                  <div className="flex items-center gap-2">
+                <td className="py-3 pr-4">
+                  <div className="flex items-center gap-1.5">
                     <span className={`w-2 h-2 rounded-full ${getStatusColor(payment.status)}`}></span>
-                    <span className="text-sm capitalize">{payment.status}</span>
+                    <span className="text-xs sm:text-sm capitalize font-medium">{payment.status}</span>
                     {getStatusIcon(payment.status)}
                   </div>
                 </td>
                 <td className="py-3">
-                  <span className="text-sm text-gray-400 font-mono">
+                  <span className="text-xs text-gray-400 font-mono">
                     {payment.reference || '-'}
                   </span>
                 </td>

@@ -114,65 +114,68 @@ const PurchaseOrders = ({ businessId }) => {
 
   return (
     <>
-      <div className="bg-gray-800 rounded-xl p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-white">Purchase Orders</h2>
+      <div className="bg-gray-800 rounded-2xl p-4 sm:p-6 border border-gray-700/80 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">Purchase Orders</h2>
+            <p className="text-gray-400 text-xs sm:text-sm mt-0.5">Manage POs and convert to invoices</p>
+          </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+            className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-xl transition-colors shadow-sm text-sm"
           >
             <Plus size={18} />
             New PO
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-gray-700 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-purple-400 mb-2">
-              <Package size={20} />
-              <span className="text-sm">Total PO Value</span>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
+          <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600/40">
+            <div className="flex items-center gap-2 text-purple-400 mb-1.5">
+              <Package size={18} />
+              <span className="text-xs sm:text-sm font-medium">Total PO Value</span>
             </div>
-            <p className="text-2xl font-bold text-white">
+            <p className="text-xl sm:text-2xl font-bold text-white font-mono tabular-nums">
               {money(totalPOValue)}
             </p>
           </div>
-          <div className="bg-gray-700 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-green-400 mb-2">
-              <FileText size={20} />
-              <span className="text-sm">Invoiced</span>
+          <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600/40">
+            <div className="flex items-center gap-2 text-green-400 mb-1.5">
+              <FileText size={18} />
+              <span className="text-xs sm:text-sm font-medium">Invoiced</span>
             </div>
-            <p className="text-2xl font-bold text-white">
+            <p className="text-xl sm:text-2xl font-bold text-white font-mono tabular-nums">
               {money(totalInvoiced)}
             </p>
           </div>
-          <div className="bg-gray-700 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-yellow-400 mb-2">
-              <TrendingUp size={20} />
-              <span className="text-sm">Remaining</span>
+          <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600/40">
+            <div className="flex items-center gap-2 text-yellow-400 mb-1.5">
+              <TrendingUp size={18} />
+              <span className="text-xs sm:text-sm font-medium">Remaining</span>
             </div>
-            <p className="text-2xl font-bold text-white">
+            <p className="text-xl sm:text-2xl font-bold text-white font-mono tabular-nums">
               {money(totalRemaining)}
             </p>
           </div>
         </div>
 
-        <div className="flex gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
               placeholder="Search POs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+              className="w-full pl-9 pr-4 py-2.5 bg-gray-700/70 border border-gray-600/60 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 text-sm min-h-[44px]"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+            className="px-4 py-2.5 bg-gray-700/70 border border-gray-600/60 rounded-xl text-white focus:outline-none focus:border-purple-500 text-sm min-h-[44px]"
           >
-            <option value="all">All Status</option>
+            <option value="all">All Statuses</option>
             <option value="active">Active</option>
             <option value="completed">Completed</option>
             <option value="draft">Draft</option>
@@ -181,42 +184,45 @@ const PurchaseOrders = ({ businessId }) => {
 
         <div className="space-y-3">
           {filteredPOs.map((po) => (
-            <div key={po.id} className="bg-gray-700 rounded-lg p-4 hover:bg-gray-650 transition-colors">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="font-mono text-sm text-purple-400">{po.po_number}</span>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(po.status).split(' ')[0]} bg-opacity-20 ${getStatusColor(po.status).split(' ')[1]}`}>
-                      {po.status.toUpperCase()}
+            <div key={po.id} className="bg-gray-700/40 border border-gray-600/40 rounded-xl p-4 hover:bg-gray-700/60 transition-colors">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <span className="font-mono text-xs sm:text-sm font-semibold text-purple-400">{po.po_number}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium uppercase ${getStatusColor(po.status).split(' ')[0]} bg-opacity-20 ${getStatusColor(po.status).split(' ')[1]}`}>
+                      {po.status}
                     </span>
                   </div>
-                  <h3 className="text-white font-medium mb-1">{po.customer_name}</h3>
-                  <p className="text-gray-400 text-sm mb-3">{po.project_name}</p>
+                  <h3 className="text-white font-medium text-base mb-0.5 truncate">{po.customer_name}</h3>
+                  <p className="text-gray-400 text-xs sm:text-sm mb-2 truncate">{po.project_name}</p>
                   
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1">
+                  <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm">
+                    <div className="flex items-center gap-1 text-gray-400">
                       <Calendar size={14} className="text-gray-500" />
-                      <span className="text-gray-400">{po.created_date}</span>
+                      <span>{po.created_date}</span>
                     </div>
                     <div className="text-gray-400">
-                      Value: <span className="text-white font-medium">{money(po.amount)}</span>
+                      Value: <span className="text-white font-mono tabular-nums font-semibold">{money(po.amount)}</span>
                     </div>
                   </div>
                 </div>
                 
-                <div className="text-right">
-                  <div className="mb-2">
-                    <div className="text-xs text-gray-400 mb-1">Progress</div>
-                    <div className="w-32 h-2 bg-gray-600 rounded-full overflow-hidden">
+                <div className="w-full sm:w-auto text-left sm:text-right border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-600/40 flex flex-col sm:items-end">
+                  <div className="mb-2 w-full sm:w-36">
+                    <div className="flex justify-between sm:justify-end text-xs text-gray-400 mb-1">
+                      <span>Progress</span>
+                      <span className="sm:hidden font-mono">{Math.round((po.invoiced_amount / (po.amount || 1)) * 100)}%</span>
+                    </div>
+                    <div className="w-full sm:w-36 h-2 bg-gray-600 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-green-500 transition-all duration-300"
-                        style={{ width: `${(po.invoiced_amount / po.amount) * 100}%` }}
+                        style={{ width: `${Math.min(100, (po.invoiced_amount / (po.amount || 1)) * 100)}%` }}
                       ></div>
                     </div>
                   </div>
-                  <div className="text-sm">
+                  <div className="text-xs sm:text-sm">
                     <span className="text-gray-400">Remaining: </span>
-                    <span className="text-white font-medium">{money(po.remaining_amount)}</span>
+                    <span className="text-white font-mono tabular-nums font-semibold">{money(po.remaining_amount)}</span>
                   </div>
                   {po.status === 'active' && (
                     <button
@@ -235,7 +241,7 @@ const PurchaseOrders = ({ businessId }) => {
                         }
                       }}
                       disabled={convertingPoId === po.id}
-                      className="mt-2 inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-xs font-medium hover:from-purple-600 hover:to-pink-600 transition-colors disabled:opacity-50"
+                      className="mt-3 w-full sm:w-auto min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-medium transition-colors disabled:opacity-50"
                     >
                       <FileCheck size={14} />
                       {convertingPoId === po.id ? 'Converting...' : 'Convert to Invoice'}

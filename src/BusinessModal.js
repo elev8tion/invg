@@ -122,78 +122,78 @@ const BusinessModal = ({ business, currentUserId, onSave, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-3 sm:p-4">
+      <div className="bg-gray-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-gray-800 shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 sm:p-6 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <Building size={24} className="text-white" />
-            <h2 className="text-xl font-bold text-white">
+            <Building size={22} className="text-white" />
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
               {business ? 'Edit Business' : 'Create New Business'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+            className="p-2 hover:bg-white/20 rounded-xl transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
           >
             <X size={20} className="text-white" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-140px)]">
           {/* Basic Information */}
           <div>
-            <h3 className="text-lg font-semibold text-purple-300 mb-4">Basic Information</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <h3 className="text-base sm:text-lg font-semibold text-purple-300 mb-3">Basic Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Business Name *</label>
+                <label className="block text-xs sm:text-sm text-gray-400 mb-1.5">Business Name *</label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className={`w-full p-3 bg-gray-800 border ${errors.name ? 'border-red-500' : 'border-gray-700'} rounded-xl focus:border-purple-500 focus:outline-none text-white`}
+                  className={`w-full p-2.5 sm:p-3 bg-gray-800 border ${errors.name ? 'border-red-500' : 'border-gray-700'} rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]`}
                   placeholder="Your Business Name"
                 />
                 {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
               </div>
               
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Email *</label>
+                <label className="block text-xs sm:text-sm text-gray-400 mb-1.5">Email *</label>
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`w-full p-3 bg-gray-800 border ${errors.email ? 'border-red-500' : 'border-gray-700'} rounded-xl focus:border-purple-500 focus:outline-none text-white`}
+                  className={`w-full p-2.5 sm:p-3 bg-gray-800 border ${errors.email ? 'border-red-500' : 'border-gray-700'} rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]`}
                   placeholder="business@example.com"
                 />
                 {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-3 sm:mt-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Phone</label>
+                <label className="block text-xs sm:text-sm text-gray-400 mb-1.5">Phone</label>
                 <input
                   type="text"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white"
+                  className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]"
                   placeholder="(555) 123-4567"
                 />
               </div>
               
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Website</label>
+                <label className="block text-xs sm:text-sm text-gray-400 mb-1.5">Website</label>
                 <input
                   type="text"
                   name="website"
                   value={formData.website}
                   onChange={handleChange}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white"
+                  className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]"
                   placeholder="www.yourbusiness.com"
                 />
               </div>
@@ -202,24 +202,24 @@ const BusinessModal = ({ business, currentUserId, onSave, onClose }) => {
 
           {/* Address */}
           <div>
-            <h3 className="text-lg font-semibold text-purple-300 mb-4">Address</h3>
-            <div className="space-y-4">
+            <h3 className="text-base sm:text-lg font-semibold text-purple-300 mb-3">Address</h3>
+            <div className="space-y-3 sm:space-y-4">
               <input
                 type="text"
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
-                className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white"
+                className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]"
                 placeholder="Street Address"
               />
               
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <input
                   type="text"
                   name="city"
                   value={formData.city}
                   onChange={handleChange}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white"
+                  className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]"
                   placeholder="City"
                 />
                 
@@ -228,7 +228,7 @@ const BusinessModal = ({ business, currentUserId, onSave, onClose }) => {
                   name="state"
                   value={formData.state}
                   onChange={handleChange}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white"
+                  className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]"
                   placeholder="State"
                 />
                 
@@ -237,7 +237,7 @@ const BusinessModal = ({ business, currentUserId, onSave, onClose }) => {
                   name="zip"
                   value={formData.zip}
                   onChange={handleChange}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white"
+                  className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]"
                   placeholder="ZIP Code"
                 />
               </div>
@@ -246,55 +246,55 @@ const BusinessModal = ({ business, currentUserId, onSave, onClose }) => {
 
           {/* Invoice Settings */}
           <div>
-            <h3 className="text-lg font-semibold text-purple-300 mb-4">Invoice Settings</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <h3 className="text-base sm:text-lg font-semibold text-purple-300 mb-3">Invoice Settings</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Invoice Prefix *</label>
+                <label className="block text-xs sm:text-sm text-gray-400 mb-1.5">Invoice Prefix *</label>
                 <input
                   type="text"
                   name="invoice_prefix"
                   value={formData.invoice_prefix}
                   onChange={handleChange}
-                  className={`w-full p-3 bg-gray-800 border ${errors.invoice_prefix ? 'border-red-500' : 'border-gray-700'} rounded-xl focus:border-purple-500 focus:outline-none text-white`}
+                  className={`w-full p-2.5 sm:p-3 bg-gray-800 border ${errors.invoice_prefix ? 'border-red-500' : 'border-gray-700'} rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]`}
                   placeholder="INV"
                 />
                 {errors.invoice_prefix && <p className="text-red-400 text-xs mt-1">{errors.invoice_prefix}</p>}
               </div>
               
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Next Invoice Number</label>
+                <label className="block text-xs sm:text-sm text-gray-400 mb-1.5">Next Invoice Number</label>
                 <input
                   type="number"
                   name="next_invoice_number"
                   value={formData.next_invoice_number}
                   onChange={handleChange}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white"
+                  className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]"
                   min="1"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-3 sm:mt-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">PO Prefix</label>
+                <label className="block text-xs sm:text-sm text-gray-400 mb-1.5">PO Prefix</label>
                 <input
                   type="text"
                   name="po_prefix"
                   value={formData.po_prefix}
                   onChange={handleChange}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white"
+                  className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]"
                   placeholder="PO"
                 />
               </div>
               
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Next PO Number</label>
+                <label className="block text-xs sm:text-sm text-gray-400 mb-1.5">Next PO Number</label>
                 <input
                   type="number"
                   name="next_po_number"
                   value={formData.next_po_number}
                   onChange={handleChange}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white"
+                  className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]"
                   min="1"
                 />
               </div>
@@ -303,8 +303,8 @@ const BusinessModal = ({ business, currentUserId, onSave, onClose }) => {
 
           {/* Financial Settings */}
           <div>
-            <h3 className="text-lg font-semibold text-purple-300 mb-4">Financial Settings</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <h3 className="text-base sm:text-lg font-semibold text-purple-300 mb-3">Financial Settings</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div>
                 <PaymentTermsField
                   label="Default Payment Terms"
@@ -315,13 +315,13 @@ const BusinessModal = ({ business, currentUserId, onSave, onClose }) => {
               </div>
               
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Default Tax Rate (%)</label>
+                <label className="block text-xs sm:text-sm text-gray-400 mb-1.5">Default Tax Rate (%)</label>
                 <input
                   type="number"
                   name="default_tax_rate"
                   value={formData.default_tax_rate}
                   onChange={handleChange}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white"
+                  className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]"
                   min="0"
                   max="100"
                   step="0.01"
@@ -329,12 +329,12 @@ const BusinessModal = ({ business, currentUserId, onSave, onClose }) => {
               </div>
               
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Currency</label>
+                <label className="block text-xs sm:text-sm text-gray-400 mb-1.5">Currency</label>
                 <select
                   name="currency"
                   value={formData.currency}
                   onChange={handleChange}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white"
+                  className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none text-white text-sm sm:text-base min-h-[44px]"
                 >
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>

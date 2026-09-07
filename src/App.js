@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Download, Save, Edit3, Plus, Trash2, Eye, LayoutDashboard, ChevronDown, Users, Send, CheckCircle } from 'lucide-react';
+import { Upload, Download, Save, Edit3, Plus, Trash2, Eye, LayoutDashboard, ChevronDown, Users, Send, CheckCircle, User, X } from 'lucide-react';
 import CustomerManagement from './CustomerManagement';
 import './App.css';
 import './styles/responsive.css'; // Import responsive design system
@@ -30,6 +30,7 @@ import './utils/cacheBuster'; // Import for side effects (keyboard shortcuts)
 export const getInvoiceTotal = invoiceTotal;
 
 const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSavedInvoices, editingInvoice, setEditingInvoice, customers, currentBusiness, onCustomersChanged, userId }) => {
+  const [mobileTab, setMobileTab] = useState('form'); // 'form' | 'preview' on mobile
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [showCustomerManagement, setShowCustomerManagement] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -317,62 +318,67 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
 
   if (currentView === 'saved') {
     return (
-      <div className="min-h-screen bg-gray-900 text-white p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Saved Invoices
-            </h1>
-            <div className="flex gap-4">
+      <div className="min-h-screen bg-gray-900 text-white px-4 py-6 sm:px-6 sm:py-8">
+        <div className="max-w-6xl mx-auto pb-16 sm:pb-0">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 sm:mb-8">
+            <div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-400 to-indigo-300 bg-clip-text text-transparent tracking-tight">
+                Saved Invoices
+              </h1>
+              <p className="text-gray-400 text-xs sm:text-sm mt-0.5">Manage and track your saved invoices</p>
+            </div>
+            <div className="flex flex-wrap gap-2.5 w-full sm:w-auto">
               <button
                 onClick={() => setCurrentView('dashboard')}
-                className="px-6 py-3 bg-gray-800 border border-gray-600 rounded-2xl hover:bg-gray-700 transition-all duration-200 flex items-center gap-2"
+                className="flex-1 sm:flex-none min-h-[44px] px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 transition-all duration-200 flex items-center justify-center gap-2 text-xs sm:text-sm font-medium"
               >
-                <LayoutDashboard size={20} />
-                Back to Dashboard
+                <LayoutDashboard size={18} />
+                Dashboard
               </button>
               <button
                 onClick={() => setCurrentView('create')}
-                className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl hover:from-purple-600 hover:to-pink-600 transition-all duration-200 font-medium"
+                className="flex-1 sm:flex-none min-h-[44px] px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl transition-all duration-200 font-medium text-xs sm:text-sm flex items-center justify-center gap-2 text-white shadow-sm"
               >
-                Create New Invoice
+                <Plus size={18} />
+                New Invoice
               </button>
             </div>
           </div>
           
-          <div className="grid gap-4">
+          <div className="grid gap-3 sm:gap-4">
             {savedInvoices.map((invoice) => (
-              <div key={invoice.id} className="bg-gray-800 rounded-3xl p-6 border border-gray-700">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-purple-400">Invoice #{invoice.invoice.number}</h3>
+              <div key={invoice.id} className="bg-gray-800 rounded-2xl p-4 sm:p-5 border border-gray-700/80 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2.5 mb-1.5">
+                      <h3 className="text-base sm:text-lg font-semibold text-purple-400 font-mono">Invoice #{invoice.invoice?.number}</h3>
                       {invoice.status === 'paid' ? (
-                        <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded-lg text-xs font-medium flex items-center gap-1">
-                          <CheckCircle size={14} />
+                        <span className="px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full text-xs font-medium flex items-center gap-1 font-mono">
+                          <CheckCircle size={12} />
                           PAID
                         </span>
                       ) : (
-                        <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-lg text-xs font-medium">
+                        <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-medium font-mono">
                           PENDING
                         </span>
                       )}
                     </div>
-                    <p className="text-gray-400">Client: {invoice.client.name || 'Unnamed Client'}</p>
-                    <p className="text-gray-400">Amount: {money(getInvoiceTotal(invoice))}</p>
-                    <p className="text-gray-500 text-sm">Saved: {new Date(invoice.savedAt).toLocaleDateString()}</p>
+                    <p className="text-gray-300 text-sm truncate font-medium">Client: {invoice.client?.name || 'Unnamed Client'}</p>
+                    <p className="text-gray-400 text-sm mt-0.5 font-mono tabular-nums">Amount: <span className="text-white font-bold">{money(getInvoiceTotal(invoice))}</span></p>
+                    <p className="text-gray-500 text-xs mt-1">Saved: {new Date(invoice.savedAt).toLocaleDateString()}</p>
                     {invoice.paidDate && (
-                      <p className="text-green-400 text-sm">Paid: {new Date(invoice.paidDate).toLocaleDateString()}</p>
+                      <p className="text-green-400 text-xs mt-0.5">Paid: {new Date(invoice.paidDate).toLocaleDateString()}</p>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap items-center gap-2 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-700/60">
                     {invoice.status !== 'paid' && (
                       <button
                         onClick={() => markInvoiceAsPaid(invoice.id)}
-                        className="p-2 bg-purple-500 rounded-xl hover:bg-purple-600 transition-colors"
+                        className="min-h-[40px] px-3 bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-500/30 rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5"
                         title="Mark as Paid"
                       >
-                        <CheckCircle size={16} />
+                        <CheckCircle size={15} />
+                        <span>Paid</span>
                       </button>
                     )}
                     <button
@@ -380,37 +386,40 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
                         setInvoiceData(invoice);
                         setCurrentView('create');
                       }}
-                      className="p-2 bg-blue-500 rounded-xl hover:bg-blue-600 transition-colors"
+                      className="min-h-[40px] px-3 bg-gray-700 hover:bg-gray-650 text-gray-200 border border-gray-600 rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5"
                       title="Edit Invoice"
                     >
-                      <Edit3 size={16} />
+                      <Edit3 size={15} />
+                      <span>Edit</span>
                     </button>
                     <button
                       onClick={() => {
                         setEmailTargetInvoice(invoice);
                         setShowEmailModal(true);
                       }}
-                      className="p-2 bg-purple-500 rounded-xl hover:bg-purple-600 transition-colors"
+                      className="min-h-[40px] px-3 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5"
                       title="Send Email"
                     >
-                      <Send size={16} />
+                      <Send size={15} />
+                      <span>Email</span>
                     </button>
                     <button
                       onClick={() => generatePDF(invoice)}
-                      className="p-2 bg-green-500 rounded-xl hover:bg-green-600 transition-colors"
+                      className="min-h-[40px] px-3 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5"
                       title="Download Invoice"
                     >
-                      <Download size={16} />
+                      <Download size={15} />
+                      <span>PDF</span>
                     </button>
                     <button
                       onClick={() => {
-                        if (window.confirm(`Are you sure you want to delete Invoice #${invoice.invoice.number}?`)) {
+                        if (window.confirm(`Are you sure you want to delete Invoice #${invoice.invoice?.number}?`)) {
                           const updatedInvoices = savedInvoices.filter(inv => inv.id !== invoice.id);
                           setSavedInvoices(updatedInvoices);
                           saveInvoices(userId, updatedInvoices);
                         }
                       }}
-                      className="p-2 bg-red-500 rounded-xl hover:bg-red-600 transition-colors"
+                      className="min-h-[40px] p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-medium transition-colors flex items-center justify-center"
                       title="Delete Invoice"
                     >
                       <Trash2 size={16} />
@@ -421,7 +430,7 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
             ))}
             
             {savedInvoices.length === 0 && (
-              <div className="text-center py-12 text-gray-400">
+              <div className="text-center py-12 bg-gray-800/40 rounded-2xl border border-gray-800 text-gray-400 text-sm">
                 <p>No saved invoices yet.</p>
               </div>
             )}
@@ -432,48 +441,51 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gray-900 text-white px-4 py-6 sm:px-6 sm:py-8">
+      <div className="max-w-6xl mx-auto pb-16 sm:pb-0">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Professional Invoice Generator
-          </h1>
-          <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 sm:mb-8">
+          <div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-400 to-indigo-300 bg-clip-text text-transparent tracking-tight">
+              Professional Invoice Generator
+            </h1>
+            <p className="text-gray-400 text-xs sm:text-sm mt-0.5">Create, preview, and send custom invoices</p>
+          </div>
+          <div className="flex flex-wrap gap-2.5 w-full sm:w-auto">
             <button
               onClick={() => setCurrentView('dashboard')}
-              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl hover:from-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center gap-2"
+              className="flex-1 sm:flex-none min-h-[44px] px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 transition-all duration-200 flex items-center justify-center gap-2 text-xs sm:text-sm font-medium"
             >
-              <LayoutDashboard size={20} />
-              Back to Dashboard
+              <LayoutDashboard size={18} />
+              Dashboard
             </button>
             <button
               onClick={() => setCurrentView('saved')}
-              className="px-6 py-3 bg-gray-800 border border-gray-600 rounded-2xl hover:bg-gray-700 transition-colors flex items-center gap-2"
+              className="flex-1 sm:flex-none min-h-[44px] px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm font-medium"
             >
-              <Eye size={20} />
-              Saved Invoices ({savedInvoices.length})
+              <Eye size={18} />
+              Saved ({savedInvoices.length})
             </button>
           </div>
         </div>
 
         {/* Input Methods */}
-        <div className="bg-gray-800 rounded-3xl p-6 mb-8 border border-gray-700">
-          <h2 className="text-xl font-semibold mb-6 text-purple-300">Quick Actions</h2>
-          <div className="flex gap-4 flex-wrap">
+        <div className="bg-gray-800 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-gray-700/80 shadow-sm">
+          <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-purple-300">Quick Actions</h2>
+          <div className="flex gap-3 flex-wrap">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-6 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl hover:from-blue-600 hover:to-cyan-600 transition-all duration-200 flex items-center gap-3"
+              className="min-h-[44px] px-4 py-2.5 bg-gray-700/80 hover:bg-gray-700 border border-gray-600 rounded-xl transition-all duration-200 flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-200 hover:text-white"
             >
-              <Upload size={20} />
+              <Upload size={18} className="text-indigo-400" />
               Upload Reference Image
             </button>
             
             <button
               onClick={() => logoInputRef.current?.click()}
-              className="px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl hover:from-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center gap-3"
+              className="min-h-[44px] px-4 py-2.5 bg-gray-700/80 hover:bg-gray-700 border border-gray-600 rounded-xl transition-all duration-200 flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-200 hover:text-white"
             >
-              <Upload size={20} />
+              <Upload size={18} className="text-purple-400" />
               Upload Logo
             </button>
             
@@ -495,10 +507,34 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        {/* Mobile View Switcher: Form vs Preview */}
+        <div className="lg:hidden flex bg-gray-800 p-1 rounded-xl mb-6 border border-gray-700/80">
+          <button
+            type="button"
+            onClick={() => setMobileTab('form')}
+            className={`flex-1 py-2.5 px-3 rounded-lg text-xs sm:text-sm font-medium transition-all min-h-[40px] flex items-center justify-center gap-1.5 ${
+              mobileTab === 'form' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Edit3 size={15} />
+            Invoice Form
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab('preview')}
+            className={`flex-1 py-2.5 px-3 rounded-lg text-xs sm:text-sm font-medium transition-all min-h-[40px] flex items-center justify-center gap-1.5 ${
+              mobileTab === 'preview' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Eye size={15} />
+            Document Preview
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           {/* Invoice Form */}
-          <div className="bg-gray-800 rounded-3xl p-6 border border-gray-700">
-            <h2 className="text-xl font-semibold mb-6 text-purple-300">Invoice Details</h2>
+          <div className={`${mobileTab === 'form' ? 'block' : 'hidden'} lg:block bg-gray-800 rounded-2xl p-4 sm:p-6 border border-gray-700/80 shadow-sm`}>
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-purple-300">Invoice Details</h2>
             
             {/* Company Info */}
             <div className="mb-6">
@@ -899,12 +935,12 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={saveInvoice}
-                className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl hover:from-blue-600 hover:to-cyan-600 transition-all duration-200 flex items-center justify-center gap-2 font-medium"
+                className="flex-1 min-h-[44px] py-2.5 px-4 bg-purple-600 hover:bg-purple-500 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 font-medium text-white shadow-sm"
               >
-                <Save size={20} />
+                <Save size={18} />
                 Save Invoice
               </button>
               <button
@@ -912,22 +948,24 @@ const InvoiceGenerator = ({ currentView, setCurrentView, savedInvoices, setSaved
                   setEmailTargetInvoice(invoiceData);
                   setShowEmailModal(true);
                 }}
-                className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl hover:from-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center justify-center gap-2 font-medium"
+                className="flex-1 min-h-[44px] py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 font-medium text-white shadow-sm"
               >
-                <Send size={20} />
+                <Send size={18} />
                 Send Email
               </button>
               <button
                 onClick={() => generatePDF()}
-                className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 flex items-center justify-center gap-2 font-medium"
+                className="flex-1 min-h-[44px] py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 font-medium text-white shadow-sm"
               >
-                <Download size={20} />
+                <Download size={18} />
                 Download PDF
               </button>
             </div>
           </div>
 
-          <InvoicePreview invoice={invoiceData} />
+          <div className={`${mobileTab === 'preview' ? 'block' : 'hidden'} lg:block`}>
+            <InvoicePreview invoice={invoiceData} />
+          </div>
         </div>
       </div>
 
@@ -994,6 +1032,7 @@ function App() {
   const [sessionReady, setSessionReady] = useState(false);
   const [showChangePin, setShowChangePin] = useState(false);
   const [showPeople, setShowPeople] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -1167,18 +1206,13 @@ function App() {
     return <PinLock onUnlock={handleUnlock} />;
   }
 
-  // Clean consistent background - no gradients
-  const getBusinessTheme = () => {
-    // Simple dark background for all businesses - clean and readable
-    return 'bg-gray-900';
-  };
-
-  if (currentView === 'dashboard') {
-    return (
-      <>
-        <div className={`min-h-screen ${getBusinessTheme()}`}>
-          <div className="p-4 bg-gray-800/50 backdrop-blur border-b border-gray-700">
-            <div className="max-w-7xl mx-auto flex justify-between items-center">
+  return (
+    <>
+      <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+        {/* Unified Top Navigation Header */}
+        <header className="sticky top-0 z-30 bg-gray-900/90 backdrop-blur-md border-b border-gray-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex justify-between items-center h-16">
+            <div className="flex items-center gap-3">
               <BusinessSwitcher 
                 userId={currentUser.id}
                 currentBusiness={currentBusiness}
@@ -1186,100 +1220,246 @@ function App() {
                 onCreateBusiness={handleCreateBusiness}
                 onEditBusiness={handleEditBusiness}
               />
-              <div className="flex items-center gap-3 text-sm text-gray-400">
-                {currentBusiness && (
-                  <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                    Active: {currentBusiness.name}
-                  </span>
-                )}
-                <span className="text-gray-300">{currentUser.full_name || 'Account'}</span>
+              {currentBusiness && (
+                <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-xs text-green-400 font-medium">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                  Active: {currentBusiness.name}
+                </span>
+              )}
+            </div>
+
+            {/* Desktop Navigation & Actions */}
+            <div className="hidden sm:flex items-center gap-3">
+              <div className="flex items-center gap-1 bg-gray-800/80 p-1 rounded-xl border border-gray-700/60">
                 <button
                   type="button"
-                  onClick={() => setShowChangePin(true)}
-                  className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 text-gray-200"
+                  onClick={() => setCurrentView('dashboard')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    currentView === 'dashboard' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-300 hover:text-white'
+                  }`}
+                >
+                  Dashboard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentView('create')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    currentView === 'create' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-300 hover:text-white'
+                  }`}
+                >
+                  New Invoice
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentView('saved')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    currentView === 'saved' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-300 hover:text-white'
+                  }`}
+                >
+                  Saved Invoices
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentView('customers')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    currentView === 'customers' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-300 hover:text-white'
+                  }`}
+                >
+                  Customers
+                </button>
+              </div>
+
+              <div className="h-4 w-px bg-gray-700 mx-1" />
+
+              <span className="text-xs sm:text-sm text-gray-300 font-medium">{currentUser.full_name || 'Account'}</span>
+              <button
+                type="button"
+                onClick={() => setShowChangePin(true)}
+                className="px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 text-xs text-gray-200 transition-colors"
+              >
+                PIN
+              </button>
+              {currentUser.role === 'admin' && (
+                <button
+                  type="button"
+                  onClick={() => setShowPeople(true)}
+                  className="px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 text-xs text-gray-200 transition-colors"
+                >
+                  People
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 text-xs text-gray-200 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+
+            {/* Mobile Menu Toggle Button */}
+            <div className="flex sm:hidden items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 bg-gray-800 border border-gray-700 rounded-xl text-gray-300 hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
+                aria-label="User Menu"
+              >
+                {mobileMenuOpen ? <X size={18} /> : <User size={18} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Dropdown Menu */}
+          {mobileMenuOpen && (
+            <div className="sm:hidden border-t border-gray-800 bg-gray-900 px-4 py-3 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-800">
+                <div>
+                  <p className="text-sm font-semibold text-white">{currentUser.full_name || 'Account'}</p>
+                  {currentBusiness && (
+                    <p className="text-xs text-green-400 flex items-center gap-1 mt-0.5">
+                      <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+                      {currentBusiness.name}
+                    </p>
+                  )}
+                </div>
+                <span className="text-xs uppercase tracking-wider px-2 py-0.5 bg-gray-800 text-gray-400 rounded-md font-mono">
+                  {currentUser.role}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowChangePin(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="py-2.5 px-3 bg-gray-800 border border-gray-700 rounded-xl text-xs font-medium text-gray-200 text-center"
                 >
                   Change PIN
                 </button>
                 {currentUser.role === 'admin' && (
                   <button
                     type="button"
-                    onClick={() => setShowPeople(true)}
-                    className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 text-gray-200"
+                    onClick={() => {
+                      setShowPeople(true);
+                      setMobileMenuOpen(false);
+                    }}
+                    className="py-2.5 px-3 bg-gray-800 border border-gray-700 rounded-xl text-xs font-medium text-gray-200 text-center"
                   >
-                    People
+                    People Admin
                   </button>
                 )}
                 <button
                   type="button"
-                  onClick={handleLogout}
-                  className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 text-gray-200"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="col-span-2 py-2.5 px-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs font-medium text-red-400 text-center"
                 >
                   Logout
                 </button>
               </div>
             </div>
+          )}
+        </header>
+
+        {/* Main Content Area */}
+        <main className="flex-1 pb-16 sm:pb-0">
+          {currentView === 'dashboard' && (
+            <Dashboard 
+              customers={customers}
+              onNavigate={handleNavigate}
+              savedInvoices={savedInvoices}
+              onEditInvoice={handleEditInvoice}
+              onDeleteInvoice={handleDeleteInvoice}
+              onUpdateInvoice={handleUpdateInvoice}
+              onCreateInvoiceForCustomer={handleCreateInvoiceForCustomer}
+              currentBusiness={currentBusiness}
+              userId={currentUser.id}
+            />
+          )}
+
+          {currentView === 'customers' && (
+            <CustomerPage
+              businessId={currentBusiness?.id}
+              userId={currentUser.id}
+              onNavigate={handleNavigate}
+              onCreateInvoiceForCustomer={handleCreateInvoiceForCustomer}
+            />
+          )}
+
+          {(currentView === 'create' || currentView === 'saved') && (
+            <InvoiceGenerator 
+              currentView={currentView}
+              setCurrentView={setCurrentView}
+              savedInvoices={savedInvoices}
+              setSavedInvoices={setSavedInvoices}
+              editingInvoice={editingInvoice}
+              onCustomersChanged={reloadCustomers}
+              setEditingInvoice={setEditingInvoice}
+              customers={customers}
+              currentBusiness={currentBusiness}
+              userId={currentUser.id}
+            />
+          )}
+        </main>
+
+        {/* Mobile Bottom Navigation Bar */}
+        <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-gray-900/95 backdrop-blur-lg border-t border-gray-800 pb-[env(safe-area-inset-bottom)]">
+          <div className="grid grid-cols-4 h-14">
+            <button
+              onClick={() => setCurrentView('dashboard')}
+              className={`flex flex-col items-center justify-center text-xs font-medium ${
+                currentView === 'dashboard' ? 'text-purple-400 font-semibold' : 'text-gray-400'
+              }`}
+            >
+              <LayoutDashboard size={18} />
+              <span className="mt-0.5 text-[10px]">Dashboard</span>
+            </button>
+            <button
+              onClick={() => setCurrentView('create')}
+              className={`flex flex-col items-center justify-center text-xs font-medium ${
+                currentView === 'create' ? 'text-purple-400 font-semibold' : 'text-gray-400'
+              }`}
+            >
+              <Plus size={18} />
+              <span className="mt-0.5 text-[10px]">New</span>
+            </button>
+            <button
+              onClick={() => setCurrentView('saved')}
+              className={`flex flex-col items-center justify-center text-xs font-medium ${
+                currentView === 'saved' ? 'text-purple-400 font-semibold' : 'text-gray-400'
+              }`}
+            >
+              <Eye size={18} />
+              <span className="mt-0.5 text-[10px]">Saved</span>
+            </button>
+            <button
+              onClick={() => setCurrentView('customers')}
+              className={`flex flex-col items-center justify-center text-xs font-medium ${
+                currentView === 'customers' ? 'text-purple-400 font-semibold' : 'text-gray-400'
+              }`}
+            >
+              <Users size={18} />
+              <span className="mt-0.5 text-[10px]">Customers</span>
+            </button>
           </div>
-          <Dashboard 
-            customers={customers}
-            onNavigate={handleNavigate}
-            savedInvoices={savedInvoices}
-            onEditInvoice={handleEditInvoice}
-            onDeleteInvoice={handleDeleteInvoice}
-            onUpdateInvoice={handleUpdateInvoice}
-            onCreateInvoiceForCustomer={handleCreateInvoiceForCustomer}
-            currentBusiness={currentBusiness}
-            userId={currentUser.id}
-          />
-        </div>
-        {showBusinessModal && (
-          <BusinessModal 
-            business={editingBusiness}
-            currentUserId={currentUser.id}
-            onSave={handleSaveBusiness}
-            onClose={() => setShowBusinessModal(false)}
-          />
-        )}
-        {accountOverlays}
-        <FeedbackCommandCenter />
-        
-        {/* Development Tools - Only shown in development mode */}
-        <DevTools />
-      </>
-    );
-  }
+        </nav>
+      </div>
 
-  if (currentView === 'customers') {
-    return (
-      <>
-        <CustomerPage
-          businessId={currentBusiness?.id}
-          userId={currentUser.id}
-          onNavigate={handleNavigate}
-          onCreateInvoiceForCustomer={handleCreateInvoiceForCustomer}
+      {showBusinessModal && (
+        <BusinessModal 
+          business={editingBusiness}
+          currentUserId={currentUser.id}
+          onSave={handleSaveBusiness}
+          onClose={() => setShowBusinessModal(false)}
         />
-        {accountOverlays}
-        <FeedbackCommandCenter />
-      </>
-    );
-  }
-
-  return (
-    <>
-      <InvoiceGenerator 
-        currentView={currentView}
-        setCurrentView={setCurrentView}
-        savedInvoices={savedInvoices}
-        setSavedInvoices={setSavedInvoices}
-        editingInvoice={editingInvoice}
-        onCustomersChanged={reloadCustomers}
-        setEditingInvoice={setEditingInvoice}
-        customers={customers}
-        currentBusiness={currentBusiness}
-        userId={currentUser.id}
-      />
+      )}
       {accountOverlays}
       <FeedbackCommandCenter />
+      <DevTools />
     </>
   );
 }

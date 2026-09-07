@@ -69,8 +69,8 @@ const EmailModal = ({ isOpen, onClose, invoice, customer, business }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-3 sm:p-4">
+      <div className="bg-gray-800 rounded-2xl p-5 sm:p-6 w-full max-w-md border border-gray-700 shadow-2xl">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Mail size={24} className="text-purple-400" />

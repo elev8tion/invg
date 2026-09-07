@@ -174,89 +174,107 @@ const CustomerPage = ({ onNavigate, onCreateInvoiceForCustomer, businessId, user
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => onNavigate('dashboard')}
-              className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <ArrowLeft size={24} />
-            </button>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Customer Management
-              </h1>
-              <p className="text-gray-400 mt-2">Manage your customers and view their history</p>
-            </div>
+        <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <button
+            onClick={() => onNavigate('dashboard')}
+            className="p-2 sm:p-2.5 hover:bg-gray-800 rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-300 hover:text-white"
+            title="Back to Dashboard"
+          >
+            <ArrowLeft size={22} />
+          </button>
+          <div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-400 to-indigo-300 bg-clip-text text-transparent tracking-tight">
+              Customer Management
+            </h1>
+            <p className="text-gray-400 text-xs sm:text-sm mt-1">Manage your customers and view billing histories</p>
           </div>
         </div>
 
         {/* Stats Bar */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gray-800 rounded-3xl p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <Users size={24} className="text-purple-400" />
-              <span className="text-sm text-gray-400">Total</span>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+          <div className="bg-gray-800 rounded-2xl p-4 sm:p-5 border border-gray-700/80 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 bg-purple-500/20 rounded-xl">
+                <Users size={20} className="text-purple-400" />
+              </div>
+              <span className="text-xs text-gray-400 font-medium">Total</span>
             </div>
-            <h3 className="text-2xl font-bold">{stats.totalCustomers}</h3>
-            <p className="text-gray-400 text-sm mt-1">Customers</p>
+            <div>
+              <h3 className="text-lg sm:text-2xl font-bold font-mono tabular-nums tracking-tight">{stats.totalCustomers}</h3>
+              <p className="text-gray-400 text-xs sm:text-sm mt-0.5">Customers</p>
+            </div>
           </div>
 
-          <div className="bg-gray-800 rounded-3xl p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <TrendingUp size={24} className="text-green-400" />
-              <span className="text-sm text-gray-400">Active</span>
+          <div className="bg-gray-800 rounded-2xl p-4 sm:p-5 border border-gray-700/80 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 bg-green-500/20 rounded-xl">
+                <TrendingUp size={20} className="text-green-400" />
+              </div>
+              <span className="text-xs text-gray-400 font-medium">Active</span>
             </div>
-            <h3 className="text-2xl font-bold">{stats.activeCustomers}</h3>
-            <p className="text-gray-400 text-sm mt-1">With Invoices</p>
+            <div>
+              <h3 className="text-lg sm:text-2xl font-bold font-mono tabular-nums tracking-tight">{stats.activeCustomers}</h3>
+              <p className="text-gray-400 text-xs sm:text-sm mt-0.5">With Invoices</p>
+            </div>
           </div>
 
-          <div className="bg-gray-800 rounded-3xl p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <DollarSign size={24} className="text-yellow-400" />
-              <span className="text-sm text-gray-400">Revenue</span>
+          <div className="bg-gray-800 rounded-2xl p-4 sm:p-5 border border-gray-700/80 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 bg-yellow-500/20 rounded-xl">
+                <DollarSign size={20} className="text-yellow-400" />
+              </div>
+              <span className="text-xs text-gray-400 font-medium">Revenue</span>
             </div>
-            <h3 className="text-2xl font-bold">
-              {money(stats.totalRevenue)}
-            </h3>
-            <p className="text-gray-400 text-sm mt-1">Total Paid</p>
+            <div>
+              <h3 className="text-lg sm:text-2xl font-bold font-mono tabular-nums tracking-tight">
+                {money(stats.totalRevenue)}
+              </h3>
+              <p className="text-gray-400 text-xs sm:text-sm mt-0.5">Total Paid</p>
+            </div>
           </div>
 
-          <div className="bg-gray-800 rounded-3xl p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <FileText size={24} className="text-blue-400" />
-              <span className="text-sm text-gray-400">Average</span>
+          <div className="bg-gray-800 rounded-2xl p-4 sm:p-5 border border-gray-700/80 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 bg-blue-500/20 rounded-xl">
+                <FileText size={20} className="text-blue-400" />
+              </div>
+              <span className="text-xs text-gray-400 font-medium">Average</span>
             </div>
-            <h3 className="text-2xl font-bold">
-              {money(stats.averageInvoiceValue)}
-            </h3>
-            <p className="text-gray-400 text-sm mt-1">Per Customer</p>
+            <div>
+              <h3 className="text-lg sm:text-2xl font-bold font-mono tabular-nums tracking-tight">
+                {money(stats.averageInvoiceValue)}
+              </h3>
+              <p className="text-gray-400 text-xs sm:text-sm mt-0.5">Per Customer</p>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Customer List */}
           <div className="lg:col-span-2">
-            <div className="bg-gray-800 rounded-3xl p-6 border border-gray-700">
+            <div className="bg-gray-800 rounded-2xl p-5 sm:p-6 border border-gray-700/80 shadow-sm">
               {/* Search and Add */}
-              <div className="flex gap-3 mb-6">
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
                 <div className="flex-1 relative">
-                  <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <Search size={18} className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search customers..."
+                    placeholder="Search customers by name, company..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:border-purple-500 focus:outline-none"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-700/60 border border-gray-600/60 rounded-xl text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none text-sm min-h-[44px]"
                   />
                 </div>
                 <button
-                  onClick={() => setShowAddForm(true)}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center gap-2"
+                  onClick={() => {
+                    setShowAddForm(true);
+                    setEditingCustomer(null);
+                  }}
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all duration-200 flex items-center justify-center gap-2 font-medium text-sm shadow-sm"
                 >
-                  <Plus size={20} />
+                  <Plus size={18} />
                   Add Customer
                 </button>
               </div>
